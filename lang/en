@@ -1,0 +1,211 @@
+index_title=Brightspeed Postfix Relay
+index=Module Index
+index_version=Postfix version $1
+index_epostfix=The Postfix mail server was not found on your system.
+index_edir=The Postfix configuration directory $1 does not exist.
+index_return=module index
+
+# Dashboard
+index_status=Service Status
+index_running=Running
+index_stopped=Stopped
+index_stats=Statistics
+index_cidr_root=Root Domain CIDRs
+index_cidr_subdomain=Subdomain CIDRs
+index_subdomains=Onboarded Subdomains
+index_queue_size=Mail Queue
+index_actions=Quick Actions
+index_start=Start Postfix
+index_stop=Stop Postfix
+index_reload=Reload Configuration
+index_check=Check Configuration
+index_view_queue=View Mail Queue
+index_view_logs=View Logs
+
+# CIDR Management
+cidrs_title=CIDR Whitelist Management
+cidrs_root_title=Root Domain CIDR List
+cidrs_subdomain_title=Subdomain CIDR List
+cidrs_desc_root=These CIDR ranges are allowed to send mail from @brightspeed.com and @brightspeedbroadband.net root domains.
+cidrs_desc_subdomain=These CIDR ranges are allowed to send mail from Brightspeed subdomains.
+cidrs_add=Add CIDR Range
+cidrs_cidr=CIDR Range
+cidrs_comment=Comment
+cidrs_action=Action
+cidrs_delete=Delete
+cidrs_save=Save Changes
+cidrs_err=Failed to save CIDR list
+cidrs_ecidr=Invalid CIDR format: $1
+cidrs_updated=CIDR list updated successfully
+cidrs_postmap_failed=Failed to run postmap: $1
+
+# Subdomain Management
+subdomains_title=Subdomain Onboarding
+subdomains_desc=Manage onboarded Brightspeed subdomains. Adding a subdomain will update all required configuration files.
+subdomains_list=Onboarded Subdomains
+subdomains_add=Add New Subdomain
+subdomains_subdomain=Subdomain
+subdomains_relay=Relay Host
+subdomains_action=Action
+subdomains_remove=Remove
+subdomains_save=Save Changes
+subdomains_err=Failed to save subdomain configuration
+subdomains_edomain=Invalid subdomain format: $1
+subdomains_updated=Subdomain configuration updated successfully
+subdomains_onboard=Onboard Subdomain
+subdomains_onboard_desc=Enter subdomain details to add across all configuration files
+subdomains_onboard_name=Subdomain Name
+subdomains_onboard_name_desc=e.g., mynewapp.brightspeed.com
+subdomains_onboard_type=Subdomain Type
+subdomains_onboard_root=Root subdomain (*.brightspeed.com)
+subdomains_onboard_broadband=Broadband subdomain (*.brightspeedbroadband.net)
+subdomains_onboard_relay_type=Relay Type
+subdomains_onboard_mailgun=Mailgun (default)
+subdomains_onboard_direct=Direct to internal host
+subdomains_onboard_button=Onboard Subdomain
+
+# Sender Relay Maps
+sender_relay_title=Sender Relay Configuration
+sender_relay_desc=Configure sender-dependent relay routing. Each sender domain can route to a different relay host.
+sender_relay_sender=Sender Domain
+sender_relay_nexthop=Relay Host
+sender_relay_add=Add Sender Route
+sender_relay_save=Save Changes
+sender_relay_err=Failed to save sender relay map
+sender_relay_esender=Invalid sender format: $1
+sender_relay_enexthop=Invalid relay host format: $1
+sender_relay_updated=Sender relay map updated successfully
+sender_relay_default=Default relay: [smtp.mailgun.org]:587
+
+# Domain Transport
+domain_transport_title=Domain Transport Rules
+domain_transport_desc=Configure domain-specific transport rules for routing mail.
+domain_transport_hash_title=Hash Transport Map
+domain_transport_regexp_title=Regular Expression Transport Map
+domain_transport_pattern=Pattern/Domain
+domain_transport_transport=Transport
+domain_transport_add=Add Rule
+domain_transport_save=Save Changes
+domain_transport_err=Failed to save transport map
+domain_transport_epattern=Invalid pattern: $1
+domain_transport_etransport=Invalid transport format: $1
+domain_transport_updated=Transport map updated successfully
+domain_transport_discard=Discard/Blackhole
+domain_transport_smtp=SMTP Direct
+domain_transport_relay=Relay
+
+# Service Control
+control_title=Service Control
+control_desc=Start, stop, or reload the Postfix mail server
+control_status=Current Status
+control_start=Start Service
+control_stop=Stop Service
+control_reload=Reload Configuration
+control_check=Check Configuration
+control_started=Postfix started successfully
+control_stopped=Postfix stopped successfully
+control_reloaded=Postfix configuration reloaded successfully
+control_check_ok=Configuration check passed
+control_check_failed=Configuration check failed: $1
+control_err=Service control operation failed
+control_ecommand=Command failed: $1
+
+# Mail Queue
+queue_title=Mail Queue
+queue_desc=View and manage queued mail messages
+queue_id=Queue ID
+queue_size=Size
+queue_arrival=Arrival Time
+queue_sender=Sender
+queue_recipient=Recipients
+queue_action=Action
+queue_delete=Delete
+queue_flush=Flush Queue
+queue_empty=Mail queue is empty
+queue_flushed=Mail queue flushed
+queue_deleted=Message deleted
+
+# Virtual Domains
+virtual_title=Virtual Domain Aliases
+virtual_desc=Configure virtual domain alias mappings
+virtual_source=Source Address
+virtual_destination=Destination
+virtual_add=Add Alias
+virtual_save=Save Changes
+virtual_err=Failed to save virtual aliases
+virtual_updated=Virtual aliases updated successfully
+
+# Header Checks
+headers_title=Header Validation Rules
+headers_desc=Configure header validation rules for From: headers
+headers_pattern=Header Pattern
+headers_action=Action
+headers_add=Add Rule
+headers_save=Save Changes
+headers_err=Failed to save header checks
+headers_updated=Header checks updated successfully
+headers_ignore=Ignore (Allow)
+headers_reject=Reject
+
+# SASL Configuration
+sasl_title=SASL Authentication
+sasl_desc=Configure SASL authentication for outbound relay connections
+sasl_host=Relay Host
+sasl_username=Username
+sasl_password=Password
+sasl_add=Add Credentials
+sasl_save=Save Changes
+sasl_err=Failed to save SASL credentials
+sasl_updated=SASL credentials updated successfully
+sasl_warning=Credentials are stored securely with restricted permissions
+
+# Logs
+logs_title=Mail Log Viewer
+logs_desc=View Postfix mail logs
+logs_filter=Filter
+logs_refresh=Refresh
+logs_download=Download
+logs_clear_filter=Clear Filter
+
+# ACL
+acl_cidrs=Can manage CIDR whitelists
+acl_subdomains=Can manage subdomain onboarding
+acl_sender_relay=Can manage sender relay maps
+acl_transport=Can manage transport rules
+acl_headers=Can manage header checks
+acl_virtual=Can manage virtual aliases
+acl_sasl=Can manage SASL credentials
+acl_control=Can start/stop/reload Postfix
+acl_queue=Can view and manage mail queue
+acl_logs=Can view mail logs
+
+# Common
+save=Save
+delete=Delete
+cancel=Cancel
+add=Add
+edit=Edit
+back=Back
+yes=Yes
+no=No
+none=None
+enabled=Enabled
+disabled=Disabled
+ok=OK
+
+# Errors
+error=Error
+error_postfix_not_found=Postfix is not installed or not found
+error_permission_denied=Permission denied
+error_invalid_input=Invalid input
+error_file_not_found=Configuration file not found: $1
+error_file_read=Failed to read file: $1
+error_file_write=Failed to write file: $1
+error_postmap=postmap command failed: $1
+error_postfix_cmd=Postfix command failed: $1
+
+# Success
+success=Success
+saved=Configuration saved successfully
+deleted=Deleted successfully
+reloaded=Configuration reloaded successfully

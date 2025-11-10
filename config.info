@@ -1,0 +1,14 @@
+postfix_config_dir=Postfix configuration directory,0
+postfix_command=Path to postfix command,0
+postmap_command=Path to postmap command,0
+postconf_command=Path to postconf command,0
+cidr_root_file=Root domain CIDR whitelist file,0
+cidr_subdomain_file=Subdomain CIDR whitelist file,0
+sender_relay_map=Sender relay map file,0
+transport_file=Transport map file,0
+domain_transport_file=Domain transport regexp file,0
+header_checks_file=Header checks file,0
+v_domains_file=Virtual domains file,0
+sasl_passwd_file=SASL password file,0
+mail_log_file=Primary mail log file,0
+alt_mail_log_file=Alternative mail log file,0
