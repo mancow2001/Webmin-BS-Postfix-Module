@@ -56,33 +56,32 @@ print &ui_form_start("virtual.cgi", "post");
 my @entries = &read_hash_map($config{'v_domains_file'});
 my @virtual_entries = grep { $_->{'type'} eq 'mapping' } @entries;
 
-print &ui_table_start($text{'virtual_title'}, "width=100%", 3);
-print &ui_table_row(undef, [
-    "<b>$text{'virtual_source'}</b>",
-    "<b>$text{'virtual_destination'}</b>",
-    "<b>$text{'delete'}</b>"
-], 3, ["align=left"]);
+print &ui_columns_start([
+    $text{'virtual_source'},
+    $text{'virtual_destination'},
+    $text{'delete'}
+]);
 
 my $idx = 0;
 foreach my $entry (@virtual_entries) {
-    print &ui_table_row(undef, [
+    print &ui_columns_row([
         &ui_textbox("source_$idx", $entry->{'key'}, 30),
         &ui_textbox("dest_$idx", $entry->{'value'}, 30),
         &ui_checkbox("delete_$idx", "1", "", 0)
-    ], 3);
+    ]);
     $idx++;
 }
 
 # Add empty row
-print &ui_table_row(undef, [
+print &ui_columns_row([
     &ui_textbox("source_$idx", "", 30),
     &ui_textbox("dest_$idx", "", 30),
     ""
-], 3);
+]);
 $idx++;
 
 print &ui_hidden("count", $idx);
-print &ui_table_end();
+print &ui_columns_end();
 
 print &ui_form_end([ ["save", $text{'save'}] ]);
 

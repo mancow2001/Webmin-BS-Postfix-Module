@@ -87,36 +87,35 @@ print &ui_hidden("list_type", "root");
 my @root_cidrs = &read_cidr_file($config{'cidr_root_file'});
 my @root_entries = grep { $_->{'type'} eq 'cidr' && $_->{'action'} ne 'reject' } @root_cidrs;
 
-print &ui_table_start($text{'cidrs_root_title'}, "width=100%", 4);
-print &ui_table_row(undef, [
-    "<b>$text{'cidrs_cidr'}</b>",
-    "<b>$text{'cidrs_comment'}</b>",
-    "<b>$text{'cidrs_action'}</b>",
-    "<b>$text{'cidrs_delete'}</b>"
-], 4, ["align=left"]);
+print &ui_columns_start([
+    $text{'cidrs_cidr'},
+    $text{'cidrs_comment'},
+    $text{'cidrs_action'},
+    $text{'cidrs_delete'}
+]);
 
 my $idx = 0;
 foreach my $entry (@root_entries) {
-    print &ui_table_row(undef, [
+    print &ui_columns_row([
         &ui_textbox("cidr_$idx", $entry->{'cidr'}, 20),
         &ui_textbox("comment_$idx", $entry->{'comment'}, 40),
         &ui_select("action_$idx", $entry->{'action'}, [['OK', 'OK'], ['reject', 'reject']]),
         &ui_checkbox("delete_$idx", "1", "", 0)
-    ], 4);
+    ]);
     $idx++;
 }
 
 # Add empty row for new entry
-print &ui_table_row(undef, [
+print &ui_columns_row([
     &ui_textbox("cidr_$idx", "", 20),
     &ui_textbox("comment_$idx", "", 40),
     &ui_select("action_$idx", "OK", [['OK', 'OK'], ['reject', 'reject']]),
     ""
-], 4);
+]);
 $idx++;
 
 print &ui_hidden("count", $idx);
-print &ui_table_end();
+print &ui_columns_end();
 
 print &ui_form_end([ ["save", $text{'save'}] ]);
 
@@ -131,36 +130,35 @@ print &ui_hidden("list_type", "subdomain");
 my @subdomain_cidrs = &read_cidr_file($config{'cidr_subdomain_file'});
 my @subdomain_entries = grep { $_->{'type'} eq 'cidr' && $_->{'action'} ne 'reject' } @subdomain_cidrs;
 
-print &ui_table_start($text{'cidrs_subdomain_title'}, "width=100%", 4);
-print &ui_table_row(undef, [
-    "<b>$text{'cidrs_cidr'}</b>",
-    "<b>$text{'cidrs_comment'}</b>",
-    "<b>$text{'cidrs_action'}</b>",
-    "<b>$text{'cidrs_delete'}</b>"
-], 4, ["align=left"]);
+print &ui_columns_start([
+    $text{'cidrs_cidr'},
+    $text{'cidrs_comment'},
+    $text{'cidrs_action'},
+    $text{'cidrs_delete'}
+]);
 
 $idx = 0;
 foreach my $entry (@subdomain_entries) {
-    print &ui_table_row(undef, [
+    print &ui_columns_row([
         &ui_textbox("cidr_$idx", $entry->{'cidr'}, 20),
         &ui_textbox("comment_$idx", $entry->{'comment'}, 40),
         &ui_select("action_$idx", $entry->{'action'}, [['OK', 'OK'], ['reject', 'reject']]),
         &ui_checkbox("delete_$idx", "1", "", 0)
-    ], 4);
+    ]);
     $idx++;
 }
 
 # Add empty row for new entry
-print &ui_table_row(undef, [
+print &ui_columns_row([
     &ui_textbox("cidr_$idx", "", 20),
     &ui_textbox("comment_$idx", "", 40),
     &ui_select("action_$idx", "OK", [['OK', 'OK'], ['reject', 'reject']]),
     ""
-], 4);
+]);
 $idx++;
 
 print &ui_hidden("count", $idx);
-print &ui_table_end();
+print &ui_columns_end();
 
 print &ui_form_end([ ["save", $text{'save'}] ]);
 

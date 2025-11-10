@@ -19,7 +19,6 @@ use WebminCore;
 init_config();
 
 our %access = get_module_acl();
-our %config = %{get_module_config()};
 
 # Default configuration file paths
 $config{'postfix_config_dir'} ||= "/etc/postfix";

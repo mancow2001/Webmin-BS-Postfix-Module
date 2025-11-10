@@ -77,29 +77,28 @@ my @sender_relay = &read_hash_map($config{'sender_relay_map'});
 my @subdomains = grep { $_->{'type'} eq 'mapping' && $_->{'key'} =~ /^@.*\.brightspeed/ } @sender_relay;
 
 if (@subdomains) {
-    print &ui_table_start($text{'subdomains_list'}, "width=100%", 3);
-    print &ui_table_row(undef, [
-        "<b>$text{'subdomains_subdomain'}</b>",
-        "<b>$text{'subdomains_relay'}</b>",
-        "<b>$text{'subdomains_action'}</b>"
-    ], 3, ["align=left"]);
+    print &ui_columns_start([
+        $text{'subdomains_subdomain'},
+        $text{'subdomains_relay'},
+        $text{'subdomains_action'}
+    ]);
 
     foreach my $entry (@subdomains) {
         my $subdomain = $entry->{'key'};
         $subdomain =~ s/^@//;
         my $relay = $entry->{'value'};
 
-        print &ui_table_row(undef, [
+        print &ui_columns_row([
             $subdomain,
             $relay,
             &ui_form_start("subdomains.cgi", "post") .
             &ui_hidden("remove_subdomain", $subdomain) .
             &ui_submit($text{'subdomains_remove'}, "remove") .
             &ui_form_end()
-        ], 3);
+        ]);
     }
 
-    print &ui_table_end();
+    print &ui_columns_end();
 } else {
     print &ui_alert_box("No subdomains onboarded yet", 'info');
 }

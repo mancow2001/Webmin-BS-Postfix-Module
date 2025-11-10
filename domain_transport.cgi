@@ -89,33 +89,32 @@ print &ui_form_start("domain_transport.cgi", "post");
 my @hash_entries = &read_hash_map($config{'transport_file'});
 my @transport_entries = grep { $_->{'type'} eq 'mapping' } @hash_entries;
 
-print &ui_table_start($text{'domain_transport_hash_title'}, "width=100%", 3);
-print &ui_table_row(undef, [
-    "<b>$text{'domain_transport_pattern'}</b>",
-    "<b>$text{'domain_transport_transport'}</b>",
-    "<b>$text{'delete'}</b>"
-], 3, ["align=left"]);
+print &ui_columns_start([
+    $text{'domain_transport_pattern'},
+    $text{'domain_transport_transport'},
+    $text{'delete'}
+]);
 
 my $idx = 0;
 foreach my $entry (@transport_entries) {
-    print &ui_table_row(undef, [
+    print &ui_columns_row([
         &ui_textbox("domain_$idx", $entry->{'key'}, 30),
         &ui_textbox("transport_$idx", $entry->{'value'}, 40),
         &ui_checkbox("delete_$idx", "1", "", 0)
-    ], 3);
+    ]);
     $idx++;
 }
 
 # Add empty row
-print &ui_table_row(undef, [
+print &ui_columns_row([
     &ui_textbox("domain_$idx", "", 30),
     &ui_textbox("transport_$idx", "relay:[smtp.mailgun.org]:587", 40),
     ""
-], 3);
+]);
 $idx++;
 
 print &ui_hidden("count_hash", $idx);
-print &ui_table_end();
+print &ui_columns_end();
 
 print &ui_form_end([ ["save_hash", $text{'save'}] ]);
 
@@ -128,33 +127,32 @@ print &ui_form_start("domain_transport.cgi", "post");
 my @regexp_entries = &read_pcre_file($config{'domain_transport_file'});
 my @regexp_maps = grep { $_->{'type'} eq 'pcre' } @regexp_entries;
 
-print &ui_table_start($text{'domain_transport_regexp_title'}, "width=100%", 3);
-print &ui_table_row(undef, [
-    "<b>$text{'domain_transport_pattern'}</b>",
-    "<b>$text{'domain_transport_transport'}</b>",
-    "<b>$text{'delete'}</b>"
-], 3, ["align=left"]);
+print &ui_columns_start([
+    $text{'domain_transport_pattern'},
+    $text{'domain_transport_transport'},
+    $text{'delete'}
+]);
 
 $idx = 0;
 foreach my $entry (@regexp_maps) {
-    print &ui_table_row(undef, [
+    print &ui_columns_row([
         &ui_textbox("pattern_$idx", $entry->{'pattern'}, 30),
         &ui_textbox("transport_r_$idx", $entry->{'action'}, 40),
         &ui_checkbox("delete_r_$idx", "1", "", 0)
-    ], 3);
+    ]);
     $idx++;
 }
 
 # Add empty row
-print &ui_table_row(undef, [
+print &ui_columns_row([
     &ui_textbox("pattern_$idx", "", 30),
     &ui_textbox("transport_r_$idx", "smtp:[host]:25", 40),
     ""
-], 3);
+]);
 $idx++;
 
 print &ui_hidden("count_regexp", $idx);
-print &ui_table_end();
+print &ui_columns_end();
 
 print &ui_form_end([ ["save_regexp", $text{'save'}] ]);
 

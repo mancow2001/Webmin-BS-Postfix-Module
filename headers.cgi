@@ -58,33 +58,32 @@ print &ui_form_start("headers.cgi", "post");
 my @entries = &read_pcre_file($config{'header_checks_file'});
 my @header_entries = grep { $_->{'type'} eq 'pcre' && $_->{'action'} ne 'REJECT "From:" header must be @brightspeed.com or @brightspeedbroadband.net or onboarded sub-domain' } @entries;
 
-print &ui_table_start($text{'headers_title'}, "width=100%", 3);
-print &ui_table_row(undef, [
-    "<b>$text{'headers_pattern'}</b>",
-    "<b>$text{'headers_action'}</b>",
-    "<b>$text{'delete'}</b>"
-], 3, ["align=left"]);
+print &ui_columns_start([
+    $text{'headers_pattern'},
+    $text{'headers_action'},
+    $text{'delete'}
+]);
 
 my $idx = 0;
 foreach my $entry (@header_entries) {
-    print &ui_table_row(undef, [
+    print &ui_columns_row([
         &ui_textbox("pattern_$idx", $entry->{'pattern'}, 40),
         &ui_select("action_$idx", $entry->{'action'}, [['IGNORE', 'IGNORE'], ['REJECT', 'REJECT']]),
         &ui_checkbox("delete_$idx", "1", "", 0)
-    ], 3);
+    ]);
     $idx++;
 }
 
 # Add empty row
-print &ui_table_row(undef, [
+print &ui_columns_row([
     &ui_textbox("pattern_$idx", "", 40),
     &ui_select("action_$idx", "IGNORE", [['IGNORE', 'IGNORE'], ['REJECT', 'REJECT']]),
     ""
-], 3);
+]);
 $idx++;
 
 print &ui_hidden("count", $idx);
-print &ui_table_end();
+print &ui_columns_end();
 
 print &ui_form_end([ ["save", $text{'save'}] ]);
 

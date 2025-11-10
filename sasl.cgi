@@ -63,38 +63,37 @@ print &ui_form_start("sasl.cgi", "post");
 my @entries = &read_hash_map($config{'sasl_passwd_file'});
 my @sasl_entries = grep { $_->{'type'} eq 'mapping' } @entries;
 
-print &ui_table_start($text{'sasl_title'}, "width=100%", 4);
-print &ui_table_row(undef, [
-    "<b>$text{'sasl_host'}</b>",
-    "<b>$text{'sasl_username'}</b>",
-    "<b>$text{'sasl_password'}</b>",
-    "<b>$text{'delete'}</b>"
-], 4, ["align=left"]);
+print &ui_columns_start([
+    $text{'sasl_host'},
+    $text{'sasl_username'},
+    $text{'sasl_password'},
+    $text{'delete'}
+]);
 
 my $idx = 0;
 foreach my $entry (@sasl_entries) {
     my ($username, $password) = split(/:/, $entry->{'value'}, 2);
 
-    print &ui_table_row(undef, [
+    print &ui_columns_row([
         &ui_textbox("host_$idx", $entry->{'key'}, 30),
         &ui_textbox("username_$idx", $username, 20),
         &ui_password("password_$idx", $password, 20),
         &ui_checkbox("delete_$idx", "1", "", 0)
-    ], 4);
+    ]);
     $idx++;
 }
 
 # Add empty row
-print &ui_table_row(undef, [
+print &ui_columns_row([
     &ui_textbox("host_$idx", "[smtp.mailgun.org]:587", 30),
     &ui_textbox("username_$idx", "", 20),
     &ui_password("password_$idx", "", 20),
     ""
-], 4);
+]);
 $idx++;
 
 print &ui_hidden("count", $idx);
-print &ui_table_end();
+print &ui_columns_end();
 
 print &ui_form_end([ ["save", $text{'save'}] ]);
 

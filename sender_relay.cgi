@@ -71,33 +71,32 @@ print &ui_form_start("sender_relay.cgi", "post");
 my @entries = &read_hash_map($config{'sender_relay_map'});
 my @relay_entries = grep { $_->{'type'} eq 'mapping' } @entries;
 
-print &ui_table_start($text{'sender_relay_title'}, "width=100%", 3);
-print &ui_table_row(undef, [
-    "<b>$text{'sender_relay_sender'}</b>",
-    "<b>$text{'sender_relay_nexthop'}</b>",
-    "<b>$text{'delete'}</b>"
-], 3, ["align=left"]);
+print &ui_columns_start([
+    $text{'sender_relay_sender'},
+    $text{'sender_relay_nexthop'},
+    $text{'delete'}
+]);
 
 my $idx = 0;
 foreach my $entry (@relay_entries) {
-    print &ui_table_row(undef, [
+    print &ui_columns_row([
         &ui_textbox("sender_$idx", $entry->{'key'}, 30),
         &ui_textbox("nexthop_$idx", $entry->{'value'}, 40),
         &ui_checkbox("delete_$idx", "1", "", 0)
-    ], 3);
+    ]);
     $idx++;
 }
 
 # Add empty row for new entry
-print &ui_table_row(undef, [
+print &ui_columns_row([
     &ui_textbox("sender_$idx", "", 30),
     &ui_textbox("nexthop_$idx", "[smtp.mailgun.org]:587", 40),
     ""
-], 3);
+]);
 $idx++;
 
 print &ui_hidden("count", $idx);
-print &ui_table_end();
+print &ui_columns_end();
 
 print &ui_form_end([ ["save", $text{'save'}] ]);
 
