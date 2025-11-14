@@ -5,7 +5,7 @@
 require './brightspeed-postfix-lib.pl';
 
 &ReadParse();
-&ui_print_header(undef, $text{'queue_title'}, "", undef, 1, 1);
+&ui_print_header("index.cgi", $text{'queue_title'}, "", undef, 1, 1);
 
 # Check ACL
 if (!$access{'queue'}) {

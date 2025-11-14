@@ -5,7 +5,7 @@
 require './brightspeed-postfix-lib.pl';
 
 &ReadParse();
-&ui_print_header(undef, $text{'domain_transport_title'}, "", undef, 1, 1);
+&ui_print_header("index.cgi", $text{'domain_transport_title'}, "", undef, 1, 1);
 
 # Check ACL
 if (!$access{'transport'}) {

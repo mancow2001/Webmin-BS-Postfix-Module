@@ -5,7 +5,7 @@
 require './brightspeed-postfix-lib.pl';
 
 &ReadParse();
-&ui_print_header(undef, $text{'cidrs_title'}, "", undef, 1, 1);
+&ui_print_header("index.cgi", $text{'cidrs_title'}, "", undef, 1, 1);
 
 # Check ACL
 if (!$access{'cidrs'}) {

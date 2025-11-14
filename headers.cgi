@@ -5,7 +5,7 @@
 require './brightspeed-postfix-lib.pl';
 
 &ReadParse();
-&ui_print_header(undef, $text{'headers_title'}, "", undef, 1, 1);
+&ui_print_header("index.cgi", $text{'headers_title'}, "", undef, 1, 1);
 
 # Check ACL
 if (!$access{'headers'}) {
@@ -68,7 +68,7 @@ my $idx = 0;
 foreach my $entry (@header_entries) {
     print &ui_columns_row([
         &ui_textbox("pattern_$idx", $entry->{'pattern'}, 40),
-        &ui_select("action_$idx", $entry->{'action'}, [['IGNORE', 'IGNORE'], ['REJECT', 'REJECT']]),
+        &ui_textbox("action_$idx", $entry->{'action'}, 50),
         &ui_checkbox("delete_$idx", "1", "", 0)
     ]);
     $idx++;
@@ -77,7 +77,7 @@ foreach my $entry (@header_entries) {
 # Add empty row
 print &ui_columns_row([
     &ui_textbox("pattern_$idx", "", 40),
-    &ui_select("action_$idx", "IGNORE", [['IGNORE', 'IGNORE'], ['REJECT', 'REJECT']]),
+    &ui_textbox("action_$idx", "IGNORE", 50),
     ""
 ]);
 $idx++;
