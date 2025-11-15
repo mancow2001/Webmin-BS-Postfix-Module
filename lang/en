@@ -39,31 +39,6 @@ cidrs_ecidr=Invalid CIDR format: $1
 cidrs_updated=CIDR list updated successfully
 cidrs_postmap_failed=Failed to run postmap: $1
 
-# Subdomain Management
-subdomains_title=Subdomain Onboarding
-subdomains_desc=Manage onboarded Brightspeed subdomains. Adding a subdomain will update all required configuration files.
-subdomains_list=Onboarded Subdomains
-subdomains_add=Add New Subdomain
-subdomains_subdomain=Subdomain
-subdomains_relay=Relay Host
-subdomains_action=Action
-subdomains_remove=Remove
-subdomains_save=Save Changes
-subdomains_err=Failed to save subdomain configuration
-subdomains_edomain=Invalid subdomain format: $1
-subdomains_updated=Subdomain configuration updated successfully
-subdomains_onboard=Onboard Subdomain
-subdomains_onboard_desc=Enter subdomain details to add across all configuration files
-subdomains_onboard_name=Subdomain Name
-subdomains_onboard_name_desc=e.g., mynewapp.brightspeed.com
-subdomains_onboard_type=Subdomain Type
-subdomains_onboard_root=Root subdomain (*.brightspeed.com)
-subdomains_onboard_broadband=Broadband subdomain (*.brightspeedbroadband.net)
-subdomains_onboard_relay_type=Relay Type
-subdomains_onboard_mailgun=Mailgun (default)
-subdomains_onboard_direct=Direct to internal host
-subdomains_onboard_button=Onboard Subdomain
-
 # Sender Relay Maps
 sender_relay_title=Sender Relay Configuration
 sender_relay_desc=Configure sender-dependent relay routing. Each sender domain can route to a different relay host.
@@ -124,16 +99,6 @@ queue_flush=Flush Queue
 queue_empty=Mail queue is empty
 queue_flushed=Mail queue flushed
 queue_deleted=Message deleted
-
-# Virtual Domains
-virtual_title=Virtual Domain Aliases
-virtual_desc=Configure virtual domain alias mappings
-virtual_source=Source Address
-virtual_destination=Destination
-virtual_add=Add Alias
-virtual_save=Save Changes
-virtual_err=Failed to save virtual aliases
-virtual_updated=Virtual aliases updated successfully
 
 # Header Checks
 headers_title=Header Validation Rules
@@ -201,15 +166,58 @@ onboard_domain_eport_required=Relay port is required
 onboard_domain_eport_invalid=Invalid port number: $1 (must be 1-65535)
 onboard_domain_eduplicate=Domain $1 already exists in $2
 
+# Configuration Viewer
+view_config_title=View Configuration
+view_config_desc=Read-only view of Postfix relay configuration files. Use Domain Onboarding/Offboarding to make changes.
+view_config_header_checks=Header Validation Rules
+view_config_header_checks_desc=PCRE patterns for validating From: headers
+view_config_sasl_passwd=SASL Authentication Credentials
+view_config_sasl_passwd_desc=Relay authentication credentials (passwords are hidden)
+view_config_sasl_warning=Passwords are stored securely and are not displayed for security reasons
+view_config_sender_relay=Sender Relay Mappings
+view_config_sender_relay_desc=Sender-dependent relay routing configuration
+view_config_transport=Transport Rules
+view_config_transport_desc=Domain-specific transport routing rules
+view_config_transport_hash=Hash Transport Map
+view_config_transport_regexp=Regular Expression Transport Map
+view_config_pattern=Pattern
+view_config_action=Action
+view_config_relay_host=Relay Host
+view_config_username=Username
+view_config_sender=Sender Domain
+view_config_nexthop=Next Hop
+view_config_domain=Domain
+view_config_transport_rule=Transport
+view_config_no_entries=No entries found
+
+# Domain Offboarding
+offboard_domain_title=Domain Offboarding
+offboard_domain_desc=Remove domains from all Postfix configuration files. Select one or more domains to offboard.
+offboard_domain_select=Select
+offboard_domain_domain=Domain
+offboard_domain_relay_host=Relay Host
+offboard_domain_preview=Preview Removal
+offboard_domain_warning=WARNING: This action cannot be reversed. All configuration entries for the selected domains will be permanently removed.
+offboard_domain_confirm_title=Confirm Domain Offboarding
+offboard_domain_confirm_desc=You are about to offboard $1 domain(s). This will remove all related configuration entries.
+offboard_domain_files_affected=The following files will be modified:
+offboard_domain_file_header_checks=header_checks - Header validation rules will be removed
+offboard_domain_file_sasl_passwd=sasl_passwd - SASL authentication credentials will be removed
+offboard_domain_file_sender_relay=sender_relay_map - Sender relay routing will be removed
+offboard_domain_confirm_button=Confirm and Remove
+offboard_domain_success=$1 domain(s) have been successfully offboarded and Postfix has been reloaded
+offboard_domain_error=Domain offboarding failed: $1
+offboard_domain_removed_list=Offboarded domains:
+offboard_domain_back=Return to offboarding
+offboard_domain_back_to_list=Back to domain list
+offboard_domain_none_found=No onboarded domains found
+offboard_domain_enone_selected=No domains selected for offboarding
+
 # ACL
 acl_cidrs=Can manage CIDR whitelists
-acl_subdomains=Can manage subdomain onboarding
 acl_onboard_domain=Can onboard full domains with SASL and relay configuration
-acl_sender_relay=Can manage sender relay maps
-acl_transport=Can manage transport rules
-acl_headers=Can manage header checks
-acl_virtual=Can manage virtual aliases
-acl_sasl=Can manage SASL credentials
+acl_offboard_domain=Can offboard domains and remove all related configuration
+acl_view_config=Can view configuration files (read-only)
 acl_control=Can start/stop/reload Postfix
 acl_queue=Can view and manage mail queue
 acl_logs=Can view mail logs

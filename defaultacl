@@ -1,10 +1,7 @@
 cidrs=1
-subdomains=1
-sender_relay=1
-transport=1
-headers=1
-virtual=1
-sasl=1
+onboard_domain=1
+offboard_domain=1
+view_config=1
 control=1
 queue=1
 logs=1

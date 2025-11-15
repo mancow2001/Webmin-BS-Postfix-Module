@@ -89,13 +89,9 @@ print &ui_table_row($text{'control_title'}, join(" | ", @control_buttons));
 # Navigation links
 my @nav_links = (
     &ui_link("cidrs.cgi", "CIDR Whitelists"),
-    &ui_link("subdomains.cgi", "Subdomain Onboarding"),
     &ui_link("onboard_domain.cgi", "Domain Onboarding"),
-    &ui_link("sender_relay.cgi", "Sender Relay Maps"),
-    &ui_link("domain_transport.cgi", "Transport Rules"),
-    &ui_link("virtual.cgi", "Virtual Aliases"),
-    &ui_link("headers.cgi", "Header Checks"),
-    &ui_link("sasl.cgi", "SASL Authentication"),
+    &ui_link("offboard_domain.cgi", "Domain Offboarding"),
+    &ui_link("view_config.cgi", "View Configuration"),
     &ui_link("queue.cgi", $text{'index_view_queue'}),
     &ui_link("logs.cgi", $text{'index_view_logs'})
 );

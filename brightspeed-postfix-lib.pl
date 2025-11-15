@@ -460,100 +460,7 @@ sub update_hash_map {
     return undef;
 }
 
-=head2 Subdomain Management Functions
-
-=item onboard_subdomain($subdomain, $relay_type, $relay_host)
-
-Onboard a new subdomain by adding it to all required configuration files.
-Returns undef on success, error message on failure.
-
-=cut
-
-sub onboard_subdomain {
-    my ($subdomain, $relay_type, $relay_host) = @_;
-
-    # Validate subdomain format
-    if ($subdomain !~ /^[a-z0-9-]+\.brightspeed(broadband)?\.com$/) {
-        return "Invalid subdomain format";
-    }
-
-    # Default relay host
-    $relay_host ||= '[smtp.mailgun.org]:587';
-
-    # Add to allow_brightspeed_subdomains.pcre
-    my @pcre_entries = read_pcre_file($config{'allow_subdomain_pcre'});
-    my $pattern = '/\.' . quotemeta($subdomain) . '$/';
-    push(@pcre_entries, {
-        'type' => 'pcre',
-        'pattern' => $pattern,
-        'action' => 'allow_brightspeed_subdomains',
-        'comment' => ''
-    });
-    my $err = write_pcre_file($config{'allow_subdomain_pcre'}, \@pcre_entries);
-    return $err if $err;
-
-    # Add to header_checks
-    my @header_entries = read_pcre_file($config{'header_checks_file'});
-    my $header_pattern = '/^From: .*@' . quotemeta($subdomain) . '/';
-    push(@header_entries, {
-        'type' => 'pcre',
-        'pattern' => $header_pattern,
-        'action' => 'IGNORE',
-        'comment' => ''
-    });
-    $err = write_pcre_file($config{'header_checks_file'}, \@header_entries);
-    return $err if $err;
-
-    # Add to sender_relay_map
-    my @relay_entries = read_hash_map($config{'sender_relay_map'});
-    push(@relay_entries, {
-        'type' => 'mapping',
-        'key' => '@' . $subdomain,
-        'value' => $relay_host,
-        'comment' => ''
-    });
-    $err = write_hash_map($config{'sender_relay_map'}, \@relay_entries);
-    return $err if $err;
-    $err = update_hash_map($config{'sender_relay_map'});
-    return $err if $err;
-
-    webmin_log('onboard', 'subdomain', $subdomain, { 'relay' => $relay_host });
-    return undef;
-}
-
-=item remove_subdomain($subdomain)
-
-Remove a subdomain from all configuration files.
-Returns undef on success, error message on failure.
-
-=cut
-
-sub remove_subdomain {
-    my ($subdomain) = @_;
-
-    # Remove from allow_brightspeed_subdomains.pcre
-    my @pcre_entries = read_pcre_file($config{'allow_subdomain_pcre'});
-    @pcre_entries = grep { $_->{'pattern'} !~ /\Q$subdomain\E/ } @pcre_entries;
-    my $err = write_pcre_file($config{'allow_subdomain_pcre'}, \@pcre_entries);
-    return $err if $err;
-
-    # Remove from header_checks
-    my @header_entries = read_pcre_file($config{'header_checks_file'});
-    @header_entries = grep { $_->{'pattern'} !~ /\Q$subdomain\E/ } @header_entries;
-    $err = write_pcre_file($config{'header_checks_file'}, \@header_entries);
-    return $err if $err;
-
-    # Remove from sender_relay_map
-    my @relay_entries = read_hash_map($config{'sender_relay_map'});
-    @relay_entries = grep { $_->{'key'} !~ /\Q$subdomain\E/ } @relay_entries;
-    $err = write_hash_map($config{'sender_relay_map'}, \@relay_entries);
-    return $err if $err;
-    $err = update_hash_map($config{'sender_relay_map'});
-    return $err if $err;
-
-    webmin_log('remove', 'subdomain', $subdomain);
-    return undef;
-}
+=head2 Domain Management Functions
 
 =item onboard_domain_full($fqdn, $relay_username, $relay_password, $relay_host, $relay_port)
 
@@ -728,6 +635,163 @@ sub onboard_domain_full {
     }
 
     webmin_log('onboard', 'domain', $fqdn, { 'relay' => $relay_nexthop });
+    return undef;
+}
+
+=item offboard_domain_full(\@fqdns)
+
+Offboard one or more domains by removing them from all configuration files.
+This function modifies header_checks, sasl_passwd, and sender_relay_map files.
+Includes transaction rollback on failure.
+
+Parameters:
+- \@fqdns: Array reference of fully qualified domain names to offboard
+
+Returns undef on success, error message on failure.
+
+=cut
+
+sub offboard_domain_full {
+    my ($fqdns_ref) = @_;
+    my @fqdns = @$fqdns_ref;
+    my %backups;
+
+    return "No domains specified for offboarding" if (!@fqdns);
+
+    # Create backups
+    foreach my $file ($config{'header_checks_file'}, $config{'sasl_passwd_file'}, $config{'sender_relay_map'}) {
+        my $backup = $file . '.backup.' . time();
+        if (!copy_source_dest($file, $backup)) {
+            # Clean up any backups already created
+            foreach my $bak (values %backups) {
+                unlink($bak);
+            }
+            return "Failed to create backup of $file";
+        }
+        $backups{$file} = $backup;
+    }
+
+    # Modify header_checks - remove entries matching any domain
+    my @header_entries = read_pcre_file($config{'header_checks_file'});
+    my @new_header_entries;
+    foreach my $entry (@header_entries) {
+        my $keep = 1;
+        foreach my $fqdn (@fqdns) {
+            if ($entry->{'pattern'} =~ /\Q$fqdn\E/) {
+                $keep = 0;
+                last;
+            }
+        }
+        push(@new_header_entries, $entry) if $keep;
+    }
+
+    my $err = write_pcre_file($config{'header_checks_file'}, \@new_header_entries);
+    if ($err) {
+        # Rollback
+        foreach my $file (keys %backups) {
+            copy_source_dest($backups{$file}, $file);
+            unlink($backups{$file});
+        }
+        return "Failed to update header_checks: $err";
+    }
+
+    # Modify sasl_passwd - remove entries matching any domain
+    my @sasl_entries = read_hash_map($config{'sasl_passwd_file'});
+    my @new_sasl_entries;
+    foreach my $entry (@sasl_entries) {
+        my $keep = 1;
+        foreach my $fqdn (@fqdns) {
+            if ($entry->{'key'} eq '@' . $fqdn) {
+                $keep = 0;
+                last;
+            }
+        }
+        push(@new_sasl_entries, $entry) if $keep;
+    }
+
+    $err = write_hash_map($config{'sasl_passwd_file'}, \@new_sasl_entries);
+    if ($err) {
+        # Rollback
+        foreach my $file (keys %backups) {
+            copy_source_dest($backups{$file}, $file);
+            unlink($backups{$file});
+        }
+        return "Failed to update sasl_passwd: $err";
+    }
+
+    # Set permissions on sasl_passwd
+    chmod(0600, $config{'sasl_passwd_file'});
+
+    # Run postmap on sasl_passwd
+    $err = update_hash_map($config{'sasl_passwd_file'});
+    if ($err) {
+        # Rollback
+        foreach my $file (keys %backups) {
+            copy_source_dest($backups{$file}, $file);
+            unlink($backups{$file});
+        }
+        return "Failed to run postmap on sasl_passwd: $err";
+    }
+
+    # Set permissions on sasl_passwd.db
+    chmod(0600, $config{'sasl_passwd_file'} . '.db');
+
+    # Modify sender_relay_map - remove entries matching any domain
+    my @relay_entries = read_hash_map($config{'sender_relay_map'});
+    my @new_relay_entries;
+    foreach my $entry (@relay_entries) {
+        my $keep = 1;
+        foreach my $fqdn (@fqdns) {
+            if ($entry->{'key'} eq '@' . $fqdn) {
+                $keep = 0;
+                last;
+            }
+        }
+        push(@new_relay_entries, $entry) if $keep;
+    }
+
+    $err = write_hash_map($config{'sender_relay_map'}, \@new_relay_entries);
+    if ($err) {
+        # Rollback
+        foreach my $file (keys %backups) {
+            copy_source_dest($backups{$file}, $file);
+            unlink($backups{$file});
+        }
+        return "Failed to update sender_relay_map: $err";
+    }
+
+    # Run postmap on sender_relay_map
+    $err = update_hash_map($config{'sender_relay_map'});
+    if ($err) {
+        # Rollback
+        foreach my $file (keys %backups) {
+            copy_source_dest($backups{$file}, $file);
+            unlink($backups{$file});
+        }
+        return "Failed to run postmap on sender_relay_map: $err";
+    }
+
+    # Apply changes with postfix reload
+    $err = reload_postfix();
+    if ($err) {
+        # Rollback
+        foreach my $file (keys %backups) {
+            copy_source_dest($backups{$file}, $file);
+            unlink($backups{$file});
+        }
+        # Re-run postmap after rollback
+        update_hash_map($config{'sasl_passwd_file'});
+        update_hash_map($config{'sender_relay_map'});
+        return "Failed to reload Postfix: $err";
+    }
+
+    # Success - remove backups
+    foreach my $backup (values %backups) {
+        unlink($backup);
+    }
+
+    my $domain_list = join(', ', @fqdns);
+    webmin_log('offboard', 'domain', $domain_list);
     return undef;
 }
 
