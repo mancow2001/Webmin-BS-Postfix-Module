@@ -694,10 +694,17 @@ sub offboard_domain_full {
     my @new_header_entries;
     foreach my $entry (@header_entries) {
         my $keep = 1;
-        foreach my $fqdn (@fqdns) {
-            if ($entry->{'pattern'} =~ /\Q$fqdn\E/) {
-                $keep = 0;
-                last;
+        # Extract domain from pattern: /^From: .*@domain\.com/ -> domain.com
+        if ($entry->{'pattern'} =~ /\@([^\/]+)\//) {
+            my $pattern_domain = $1;
+            # Remove backslash escapes for comparison
+            $pattern_domain =~ s/\\//g;
+
+            foreach my $fqdn (@fqdns) {
+                if ($pattern_domain eq $fqdn) {
+                    $keep = 0;
+                    last;
+                }
             }
         }
         push(@new_header_entries, $entry) if $keep;
