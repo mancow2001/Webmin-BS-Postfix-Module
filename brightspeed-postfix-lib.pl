@@ -695,7 +695,9 @@ sub offboard_domain_full {
 
     # Log the offboarding attempt
     my $domains_str = join(',', @fqdns);
+    print STDERR "DEBUG: About to log header_checks_start with domains=$domains_str total=" . scalar(@header_entries) . "\n";
     webmin_log('offboard', 'header_checks_start', "domains=$domains_str total=" . scalar(@header_entries));
+    print STDERR "DEBUG: Logged header_checks_start\n";
 
     foreach my $entry (@header_entries) {
         my $keep = 1;
