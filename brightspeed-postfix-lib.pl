@@ -692,23 +692,45 @@ sub offboard_domain_full {
     # Modify header_checks - remove entries matching any domain
     my @header_entries = read_pcre_file($config{'header_checks_file'});
     my @new_header_entries;
+
+    # Log the offboarding attempt
+    webmin_log('offboard', 'header_checks', 'start', { 'domains' => join(',', @fqdns), 'total_entries' => scalar(@header_entries) });
+
     foreach my $entry (@header_entries) {
         my $keep = 1;
         # Extract domain from pattern: /^From: .*@domain\.com/ -> domain.com
         if ($entry->{'pattern'} =~ /\@([^\/]+)\//) {
             my $pattern_domain = $1;
+            my $pattern_domain_escaped = $pattern_domain;
             # Remove backslash escapes for comparison
             $pattern_domain =~ s/\\//g;
 
             foreach my $fqdn (@fqdns) {
+                webmin_log('offboard', 'header_checks', 'compare', {
+                    'pattern' => $entry->{'pattern'},
+                    'extracted_escaped' => $pattern_domain_escaped,
+                    'extracted_unescaped' => $pattern_domain,
+                    'comparing_to' => $fqdn
+                });
+
                 if ($pattern_domain eq $fqdn) {
                     $keep = 0;
+                    webmin_log('offboard', 'header_checks', 'delete', {
+                        'pattern' => $entry->{'pattern'},
+                        'domain' => $fqdn,
+                        'matched' => 'yes'
+                    });
                     last;
                 }
             }
         }
         push(@new_header_entries, $entry) if $keep;
     }
+
+    webmin_log('offboard', 'header_checks', 'complete', {
+        'removed' => scalar(@header_entries) - scalar(@new_header_entries),
+        'remaining' => scalar(@new_header_entries)
+    });
 
     my $err = write_pcre_file($config{'header_checks_file'}, \@new_header_entries);
     if ($err) {
