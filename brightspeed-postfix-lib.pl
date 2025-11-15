@@ -324,8 +324,25 @@ sub read_pcre_file {
             next;
         }
 
-        # Parse pattern and action (allow 1 or more spaces)
-        if ($line =~ /^\s*(.+?)\s+(.+?)\s*$/) {
+        # Parse pattern and action
+        # Strategy: Split on whitespace, but the pattern should end with / or similar
+        # Most PCRE patterns end with / so look for that as a boundary
+        if ($line =~ m{^\s*(/[^/]*/)(.*)$}) {
+            # Pattern starts and ends with / (standard PCRE format)
+            my $pattern = $1;
+            my $rest = $2;
+            # Remove leading whitespace from rest to get action
+            $rest =~ s/^\s+//;
+            if ($rest) {
+                push(@entries, {
+                    'type' => 'pcre',
+                    'pattern' => $pattern,
+                    'action' => $rest,
+                    'comment' => ''
+                });
+            }
+        } elsif ($line =~ /^\s*(\S+)\s+(.+?)\s*$/) {
+            # Fallback: first non-whitespace token is pattern, rest is action
             push(@entries, {
                 'type' => 'pcre',
                 'pattern' => $1,
