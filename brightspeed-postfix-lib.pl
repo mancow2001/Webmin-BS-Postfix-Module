@@ -325,7 +325,7 @@ sub read_pcre_file {
         }
 
         # Parse pattern and action
-        if ($line =~ /^\s*(\S+)\s+(.+?)\s*$/) {
+        if ($line =~ /^\s*(.+?)\s{2,}(.+?)\s*$/) {
             push(@entries, {
                 'type' => 'pcre',
                 'pattern' => $1,
@@ -552,6 +552,182 @@ sub remove_subdomain {
     return $err if $err;
 
     webmin_log('remove', 'subdomain', $subdomain);
+    return undef;
+}
+
+=item onboard_domain_full($fqdn, $relay_username, $relay_password, $relay_host, $relay_port)
+
+Onboard a new domain with full configuration including SASL authentication.
+This function modifies header_checks, sasl_passwd, and sender_relay_map files.
+Includes transaction rollback on failure.
+
+Returns undef on success, error message on failure.
+
+=cut
+
+sub onboard_domain_full {
+    my ($fqdn, $relay_username, $relay_password, $relay_host, $relay_port) = @_;
+    my %backups;
+    my @modified_files;
+
+    # Validate inputs
+    if (!validate_domain($fqdn)) {
+        return "Invalid domain format: $fqdn";
+    }
+
+    my $relay_nexthop = "[$relay_host]:$relay_port";
+    if (!validate_relay_host($relay_nexthop)) {
+        return "Invalid relay host format: $relay_nexthop";
+    }
+
+    # Check for duplicates in all files
+    my @header_entries = read_pcre_file($config{'header_checks_file'});
+    foreach my $entry (@header_entries) {
+        if ($entry->{'pattern'} =~ /\Q$fqdn\E/) {
+            return "Domain $fqdn already exists in header_checks";
+        }
+    }
+
+    my @sasl_entries = read_hash_map($config{'sasl_passwd_file'});
+    foreach my $entry (@sasl_entries) {
+        if ($entry->{'key'} eq '@' . $fqdn) {
+            return "Domain $fqdn already exists in sasl_passwd";
+        }
+    }
+
+    my @relay_entries = read_hash_map($config{'sender_relay_map'});
+    foreach my $entry (@relay_entries) {
+        if ($entry->{'key'} eq '@' . $fqdn) {
+            return "Domain $fqdn already exists in sender_relay_map";
+        }
+    }
+
+    # Create backups
+    foreach my $file ($config{'header_checks_file'}, $config{'sasl_passwd_file'}, $config{'sender_relay_map'}) {
+        my $backup = $file . '.backup.' . time();
+        if (!copy_source_dest($file, $backup)) {
+            # Clean up any backups already created
+            foreach my $bak (values %backups) {
+                unlink($bak);
+            }
+            return "Failed to create backup of $file";
+        }
+        $backups{$file} = $backup;
+    }
+
+    # Modify header_checks - insert before last entry
+    my $header_pattern = '/^From: .*@' . quotemeta($fqdn) . '/';
+    my $new_entry = {
+        'type' => 'pcre',
+        'pattern' => $header_pattern,
+        'action' => 'IGNORE',
+        'comment' => ''
+    };
+
+    # Insert before the last entry (which should be the REJECT rule)
+    if (@header_entries > 0) {
+        splice(@header_entries, -1, 0, $new_entry);
+    } else {
+        push(@header_entries, $new_entry);
+    }
+
+    my $err = write_pcre_file($config{'header_checks_file'}, \@header_entries);
+    if ($err) {
+        # Rollback
+        foreach my $file (keys %backups) {
+            copy_source_dest($backups{$file}, $file);
+            unlink($backups{$file});
+        }
+        return "Failed to update header_checks: $err";
+    }
+    push(@modified_files, $config{'header_checks_file'});
+
+    # Modify sasl_passwd - append to end
+    push(@sasl_entries, {
+        'type' => 'mapping',
+        'key' => '@' . $fqdn,
+        'value' => $relay_username . ':' . $relay_password,
+        'comment' => ''
+    });
+
+    $err = write_hash_map($config{'sasl_passwd_file'}, \@sasl_entries);
+    if ($err) {
+        # Rollback
+        foreach my $file (keys %backups) {
+            copy_source_dest($backups{$file}, $file);
+            unlink($backups{$file});
+        }
+        return "Failed to update sasl_passwd: $err";
+    }
+    push(@modified_files, $config{'sasl_passwd_file'});
+
+    # Set permissions on sasl_passwd
+    chmod(0600, $config{'sasl_passwd_file'});
+
+    # Run postmap on sasl_passwd
+    $err = update_hash_map($config{'sasl_passwd_file'});
+    if ($err) {
+        # Rollback
+        foreach my $file (keys %backups) {
+            copy_source_dest($backups{$file}, $file);
+            unlink($backups{$file});
+        }
+        return "Failed to run postmap on sasl_passwd: $err";
+    }
+
+    # Set permissions on sasl_passwd.db
+    chmod(0600, $config{'sasl_passwd_file'} . '.db');
+
+    # Modify sender_relay_map - append to end
+    push(@relay_entries, {
+        'type' => 'mapping',
+        'key' => '@' . $fqdn,
+        'value' => $relay_nexthop,
+        'comment' => ''
+    });
+
+    $err = write_hash_map($config{'sender_relay_map'}, \@relay_entries);
+    if ($err) {
+        # Rollback
+        foreach my $file (keys %backups) {
+            copy_source_dest($backups{$file}, $file);
+            unlink($backups{$file});
+        }
+        return "Failed to update sender_relay_map: $err";
+    }
+    push(@modified_files, $config{'sender_relay_map'});
+
+    # Run postmap on sender_relay_map
+    $err = update_hash_map($config{'sender_relay_map'});
+    if ($err) {
+        # Rollback
+        foreach my $file (keys %backups) {
+            copy_source_dest($backups{$file}, $file);
+            unlink($backups{$file});
+        }
+        return "Failed to run postmap on sender_relay_map: $err";
+    }
+
+    # Apply changes with postfix reload
+    $err = reload_postfix();
+    if ($err) {
+        # Rollback
+        foreach my $file (keys %backups) {
+            copy_source_dest($backups{$file}, $file);
+            unlink($backups{$file});
+        }
+        # Re-run postmap after rollback
+        update_hash_map($config{'sasl_passwd_file'});
+        update_hash_map($config{'sender_relay_map'});
+        return "Failed to reload Postfix: $err";
+    }
+
+    # Success - remove backups
+    foreach my $backup (values %backups) {
+        unlink($backup);
+    }
+
+    webmin_log('onboard', 'domain', $fqdn, { 'relay' => $relay_nexthop });
     return undef;
 }
 

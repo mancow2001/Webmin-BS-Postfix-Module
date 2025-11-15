@@ -5,12 +5,12 @@
 require './brightspeed-postfix-lib.pl';
 
 &ReadParse();
-&ui_print_header("index.cgi", $text{'queue_title'}, "", undef, 1, 1);
+&ui_print_header(undef, $text{'queue_title'}, "", undef, 1, 1);
 
 # Check ACL
 if (!$access{'queue'}) {
     print &ui_alert_box($text{'error_permission_denied'}, 'danger');
-    &ui_print_footer("", $text{'index_return'});
+    &ui_print_footer("index.cgi", $text{'index_return'});
     exit;
 }
 
@@ -71,4 +71,4 @@ if (@queue) {
     print &ui_alert_box($text{'queue_empty'}, 'info');
 }
 
-&ui_print_footer("", $text{'index_return'});
+&ui_print_footer("index.cgi", $text{'index_return'});

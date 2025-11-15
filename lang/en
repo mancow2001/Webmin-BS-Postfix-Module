@@ -167,9 +167,44 @@ logs_refresh=Refresh
 logs_download=Download
 logs_clear_filter=Clear Filter
 
+# Domain Onboarding
+onboard_domain_title=Domain Onboarding
+onboard_domain_desc=Onboard a new domain by configuring header validation, SASL authentication, and sender relay routing in one step.
+onboard_domain_form_title=Domain Configuration
+onboard_domain_fqdn=Fully Qualified Domain Name
+onboard_domain_fqdn_hint=e.g., example.brightspeed.com or subdomain.brightspeed.com
+onboard_domain_relay_username=Relay Username
+onboard_domain_relay_password=Relay Password
+onboard_domain_relay_host=Relay Host
+onboard_domain_relay_host_hint=e.g., smtp.mailgun.org (do not include brackets or port)
+onboard_domain_relay_port=Relay Port
+onboard_domain_relay_port_hint=e.g., 587 for TLS, 25 for standard SMTP
+onboard_domain_preview=Preview Changes
+onboard_domain_preview_title=Preview Domain Onboarding
+onboard_domain_preview_desc=Review the changes that will be made to your Postfix configuration files:
+onboard_domain_preview_changes=Configuration Changes
+onboard_domain_file_header_checks=header_checks
+onboard_domain_file_sasl_passwd=sasl_passwd
+onboard_domain_file_sender_relay=sender_relay_map
+onboard_domain_insert_before_last=Will be inserted before the final REJECT rule
+onboard_domain_confirm=Confirm and Apply
+onboard_domain_success=Domain $1 has been successfully onboarded and Postfix has been reloaded
+onboard_domain_error=Domain onboarding failed: $1
+onboard_domain_another=Onboard another domain
+onboard_domain_efqdn_required=Fully qualified domain name is required
+onboard_domain_efqdn_invalid=Invalid domain format: $1
+onboard_domain_eusername_required=Relay username is required
+onboard_domain_epassword_required=Relay password is required
+onboard_domain_ehost_required=Relay host is required
+onboard_domain_ehost_invalid=Invalid relay host format: $1
+onboard_domain_eport_required=Relay port is required
+onboard_domain_eport_invalid=Invalid port number: $1 (must be 1-65535)
+onboard_domain_eduplicate=Domain $1 already exists in $2
+
 # ACL
 acl_cidrs=Can manage CIDR whitelists
 acl_subdomains=Can manage subdomain onboarding
+acl_onboard_domain=Can onboard full domains with SASL and relay configuration
 acl_sender_relay=Can manage sender relay maps
 acl_transport=Can manage transport rules
 acl_headers=Can manage header checks

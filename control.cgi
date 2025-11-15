@@ -5,12 +5,12 @@
 require './brightspeed-postfix-lib.pl';
 
 &ReadParse();
-&ui_print_header("index.cgi", $text{'control_title'}, "", undef, 1, 1);
+&ui_print_header(undef, $text{'control_title'}, "", undef, 1, 1);
 
 # Check ACL
 if (!$access{'control'}) {
     print &ui_alert_box($text{'error_permission_denied'}, 'danger');
-    &ui_print_footer("", $text{'index_return'});
+    &ui_print_footer("index.cgi", $text{'index_return'});
     exit;
 }
 
@@ -88,4 +88,4 @@ print &ui_table_row(undef, join(" | ", @buttons));
 
 print &ui_table_end();
 
-&ui_print_footer("", $text{'index_return'});
+&ui_print_footer("index.cgi", $text{'index_return'});

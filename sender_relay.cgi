@@ -5,12 +5,12 @@
 require './brightspeed-postfix-lib.pl';
 
 &ReadParse();
-&ui_print_header("index.cgi", $text{'sender_relay_title'}, "", undef, 1, 1);
+&ui_print_header(undef, $text{'sender_relay_title'}, "", undef, 1, 1);
 
 # Check ACL
 if (!$access{'sender_relay'}) {
     print &ui_alert_box($text{'error_permission_denied'}, 'danger');
-    &ui_print_footer("", $text{'index_return'});
+    &ui_print_footer("index.cgi", $text{'index_return'});
     exit;
 }
 
@@ -100,4 +100,4 @@ print &ui_columns_end();
 
 print &ui_form_end([ ["save", $text{'save'}] ]);
 
-&ui_print_footer("", $text{'index_return'});
+&ui_print_footer("index.cgi", $text{'index_return'});

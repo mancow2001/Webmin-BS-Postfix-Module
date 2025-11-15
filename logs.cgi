@@ -5,12 +5,12 @@
 require './brightspeed-postfix-lib.pl';
 
 &ReadParse();
-&ui_print_header("index.cgi", $text{'logs_title'}, "", undef, 1, 1);
+&ui_print_header(undef, $text{'logs_title'}, "", undef, 1, 1);
 
 # Check ACL
 if (!$access{'logs'}) {
     print &ui_alert_box($text{'error_permission_denied'}, 'danger');
-    &ui_print_footer("", $text{'index_return'});
+    &ui_print_footer("index.cgi", $text{'index_return'});
     exit;
 }
 
@@ -24,7 +24,7 @@ if (!-f $log_file && -f $config{'alt_mail_log_file'}) {
 
 if (!-f $log_file) {
     print &ui_alert_box("Mail log file not found at $log_file", 'warn');
-    &ui_print_footer("", $text{'index_return'});
+    &ui_print_footer("index.cgi", $text{'index_return'});
     exit;
 }
 
@@ -71,4 +71,4 @@ print "</div>";
 print "<br>";
 print &ui_link("logs.cgi" . ($filter ? "?filter=$filter" : ""), $text{'logs_refresh'});
 
-&ui_print_footer("", $text{'index_return'});
+&ui_print_footer("index.cgi", $text{'index_return'});

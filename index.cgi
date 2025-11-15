@@ -90,6 +90,7 @@ print &ui_table_row($text{'control_title'}, join(" | ", @control_buttons));
 my @nav_links = (
     &ui_link("cidrs.cgi", "CIDR Whitelists"),
     &ui_link("subdomains.cgi", "Subdomain Onboarding"),
+    &ui_link("onboard_domain.cgi", "Domain Onboarding"),
     &ui_link("sender_relay.cgi", "Sender Relay Maps"),
     &ui_link("domain_transport.cgi", "Transport Rules"),
     &ui_link("virtual.cgi", "Virtual Aliases"),

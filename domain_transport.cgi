@@ -5,12 +5,12 @@
 require './brightspeed-postfix-lib.pl';
 
 &ReadParse();
-&ui_print_header("index.cgi", $text{'domain_transport_title'}, "", undef, 1, 1);
+&ui_print_header(undef, $text{'domain_transport_title'}, "", undef, 1, 1);
 
 # Check ACL
 if (!$access{'transport'}) {
     print &ui_alert_box($text{'error_permission_denied'}, 'danger');
-    &ui_print_footer("", $text{'index_return'});
+    &ui_print_footer("index.cgi", $text{'index_return'});
     exit;
 }
 
@@ -156,4 +156,4 @@ print &ui_columns_end();
 
 print &ui_form_end([ ["save_regexp", $text{'save'}] ]);
 
-&ui_print_footer("", $text{'index_return'});
+&ui_print_footer("index.cgi", $text{'index_return'});
