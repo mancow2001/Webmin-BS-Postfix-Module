@@ -371,8 +371,8 @@ sub write_pcre_file {
         if ($entry->{'type'} eq 'comment') {
             print $fh "#" . $entry->{'comment'} . "\n";
         } elsif ($entry->{'type'} eq 'pcre') {
-            # Use 4 spaces for consistent formatting
-            print $fh $entry->{'pattern'} . "    " . $entry->{'action'} . "\n";
+            # Use tab for consistent formatting with Postfix files
+            print $fh $entry->{'pattern'} . "\t" . $entry->{'action'} . "\n";
         }
     }
 

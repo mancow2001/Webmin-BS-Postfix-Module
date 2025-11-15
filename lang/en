@@ -141,9 +141,9 @@ onboard_domain_fqdn_hint=e.g., example.brightspeed.com or subdomain.brightspeed.
 onboard_domain_relay_username=Relay Username
 onboard_domain_relay_password=Relay Password
 onboard_domain_relay_host=Relay Host
-onboard_domain_relay_host_hint=e.g., smtp.mailgun.org (do not include brackets or port)
+onboard_domain_relay_host_hint=Must be a valid FQDN (e.g., smtp.mailgun.org). Do not include brackets or port.
 onboard_domain_relay_port=Relay Port
-onboard_domain_relay_port_hint=e.g., 587 for TLS, 25 for standard SMTP
+onboard_domain_relay_port_hint=Allowed ports: 25 (SMTP), 2525 (Alt SMTP), 587 (Submission/TLS), 465 (SMTPS)
 onboard_domain_preview=Preview Changes
 onboard_domain_preview_title=Preview Domain Onboarding
 onboard_domain_preview_desc=Review the changes that will be made to your Postfix configuration files:
@@ -161,9 +161,10 @@ onboard_domain_efqdn_invalid=Invalid domain format: $1
 onboard_domain_eusername_required=Relay username is required
 onboard_domain_epassword_required=Relay password is required
 onboard_domain_ehost_required=Relay host is required
-onboard_domain_ehost_invalid=Invalid relay host format: $1
+onboard_domain_ehost_invalid=Invalid relay host format. Must be a valid FQDN: $1
 onboard_domain_eport_required=Relay port is required
-onboard_domain_eport_invalid=Invalid port number: $1 (must be 1-65535)
+onboard_domain_eport_invalid=Port must be a number: $1
+onboard_domain_eport_not_allowed=Port $1 is not allowed. Use 25, 2525, 587, or 465
 onboard_domain_eduplicate=Domain $1 already exists in $2
 
 # Configuration Viewer

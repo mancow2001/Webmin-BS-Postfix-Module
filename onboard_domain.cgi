@@ -63,17 +63,16 @@ if ($in{'preview'}) {
 
     if (!$relay_host) {
         push(@errors, $text{'onboard_domain_ehost_required'});
+    } elsif (!&validate_domain($relay_host)) {
+        push(@errors, &text('onboard_domain_ehost_invalid', $relay_host));
     }
 
     if (!$relay_port) {
         push(@errors, $text{'onboard_domain_eport_required'});
-    } elsif ($relay_port !~ /^\d+$/ || $relay_port < 1 || $relay_port > 65535) {
+    } elsif ($relay_port !~ /^\d+$/) {
         push(@errors, &text('onboard_domain_eport_invalid', $relay_port));
-    }
-
-    my $relay_nexthop = "[$relay_host]:$relay_port";
-    if (!&validate_relay_host($relay_nexthop)) {
-        push(@errors, &text('onboard_domain_ehost_invalid', $relay_nexthop));
+    } elsif ($relay_port != 25 && $relay_port != 2525 && $relay_port != 587 && $relay_port != 465) {
+        push(@errors, &text('onboard_domain_eport_not_allowed', $relay_port));
     }
 
     # Check for duplicates
