@@ -324,8 +324,8 @@ sub read_pcre_file {
             next;
         }
 
-        # Parse pattern and action
-        if ($line =~ /^\s*(.+?)\s{2,}(.+?)\s*$/) {
+        # Parse pattern and action (allow 1 or more spaces)
+        if ($line =~ /^\s*(.+?)\s+(.+?)\s*$/) {
             push(@entries, {
                 'type' => 'pcre',
                 'pattern' => $1,
@@ -354,7 +354,8 @@ sub write_pcre_file {
         if ($entry->{'type'} eq 'comment') {
             print $fh "#" . $entry->{'comment'} . "\n";
         } elsif ($entry->{'type'} eq 'pcre') {
-            print $fh $entry->{'pattern'} . " " . $entry->{'action'} . "\n";
+            # Use 4 spaces for consistent formatting
+            print $fh $entry->{'pattern'} . "    " . $entry->{'action'} . "\n";
         }
     }
 
