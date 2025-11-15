@@ -1,0 +1,86 @@
+name: Build Release
+
+on:
+  release:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g., v1.0.0)'
+        required: true
+        type: string
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name || inputs.tag }}
+
+      - name: Get version info
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            TAG="${{ github.event.release.tag_name }}"
+          else
+            TAG="${{ inputs.tag }}"
+          fi
+          VERSION="${TAG#v}"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "module_name=brightspeed-postfix" >> $GITHUB_OUTPUT
+
+      - name: Update module version
+        run: |
+          sed -i "s/^version=.*/version=${{ steps.version.outputs.version }}/" module.info
+
+      - name: Create module tarball
+        run: |
+          MODULE_NAME="${{ steps.version.outputs.module_name }}"
+          VERSION="${{ steps.version.outputs.version }}"
+          TARBALL="${MODULE_NAME}-${VERSION}.tar.gz"
+
+          # Create temp directory with module name
+          mkdir -p "/tmp/${MODULE_NAME}"
+
+          # Copy all files except git-related and build artifacts
+          rsync -av \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='*.tar.gz' \
+            --exclude='.gitignore' \
+            --exclude='.gitattributes' \
+            ./ "/tmp/${MODULE_NAME}/"
+
+          # Create tarball
+          cd /tmp
+          tar -czf "${TARBALL}" "${MODULE_NAME}"
+
+          # Move tarball back to workspace
+          mv "${TARBALL}" "${GITHUB_WORKSPACE}/"
+
+          echo "tarball=${TARBALL}" >> $GITHUB_OUTPUT
+          echo "tarball_path=${GITHUB_WORKSPACE}/${TARBALL}" >> $GITHUB_OUTPUT
+        id: create_tarball
+
+      - name: Upload release asset
+        if: github.event_name == 'release'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ${{ steps.create_tarball.outputs.tarball_path }}
+          asset_name: ${{ steps.create_tarball.outputs.tarball }}
+          asset_content_type: application/gzip
+
+      - name: Upload artifact (manual trigger)
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.create_tarball.outputs.tarball }}
+          path: ${{ steps.create_tarball.outputs.tarball_path }}
+          retention-days: 30

@@ -1,2 +1,16 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+# Git attributes for proper archive generation
+
+# Exclude development files from release archives
+.git*           export-ignore
+.github/        export-ignore
+build-release.sh export-ignore
+*.tar.gz        export-ignore
+
+# Ensure consistent line endings
+*.pl            text eol=lf
+*.cgi           text eol=lf
+*.sh            text eol=lf
+*.pm            text eol=lf
+lang/*          text eol=lf
+module.info     text eol=lf
+defaultacl      text eol=lf
