@@ -694,7 +694,8 @@ sub offboard_domain_full {
     my @new_header_entries;
 
     # Log the offboarding attempt
-    webmin_log('offboard', 'header_checks', 'start', { 'domains' => join(',', @fqdns), 'total_entries' => scalar(@header_entries) });
+    my $domains_str = join(',', @fqdns);
+    webmin_log('offboard', 'header_checks_start', "domains=$domains_str total=" . scalar(@header_entries));
 
     foreach my $entry (@header_entries) {
         my $keep = 1;
@@ -706,20 +707,11 @@ sub offboard_domain_full {
             $pattern_domain =~ s/\\//g;
 
             foreach my $fqdn (@fqdns) {
-                webmin_log('offboard', 'header_checks', 'compare', {
-                    'pattern' => $entry->{'pattern'},
-                    'extracted_escaped' => $pattern_domain_escaped,
-                    'extracted_unescaped' => $pattern_domain,
-                    'comparing_to' => $fqdn
-                });
+                webmin_log('offboard', 'header_checks_compare', "pattern=$entry->{'pattern'} escaped=$pattern_domain_escaped unescaped=$pattern_domain vs=$fqdn");
 
                 if ($pattern_domain eq $fqdn) {
                     $keep = 0;
-                    webmin_log('offboard', 'header_checks', 'delete', {
-                        'pattern' => $entry->{'pattern'},
-                        'domain' => $fqdn,
-                        'matched' => 'yes'
-                    });
+                    webmin_log('offboard', 'header_checks_delete', "MATCH pattern=$entry->{'pattern'} domain=$fqdn");
                     last;
                 }
             }
@@ -727,10 +719,8 @@ sub offboard_domain_full {
         push(@new_header_entries, $entry) if $keep;
     }
 
-    webmin_log('offboard', 'header_checks', 'complete', {
-        'removed' => scalar(@header_entries) - scalar(@new_header_entries),
-        'remaining' => scalar(@new_header_entries)
-    });
+    my $removed = scalar(@header_entries) - scalar(@new_header_entries);
+    webmin_log('offboard', 'header_checks_complete', "removed=$removed remaining=" . scalar(@new_header_entries));
 
     my $err = write_pcre_file($config{'header_checks_file'}, \@new_header_entries);
     if ($err) {
