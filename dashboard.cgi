@@ -255,7 +255,7 @@ sub display_hourly_chart {
     }
 
     # Display ASCII/HTML bar chart
-    print "<div style='font-family:monospace; background:#f5f5f5; padding:10px; border:1px solid #ddd;'>";
+    print "<pre style='font-family:monospace; background:#f5f5f5; padding:10px; border:1px solid #ddd; overflow-x:auto;'>";
 
     foreach my $hour (@hours) {
         my $count = $hourly->{$hour};
@@ -265,5 +265,5 @@ sub display_hourly_chart {
         printf "%02d:00 | %-60s %d\n", $hour, $bar, $count;
     }
 
-    print "</div>";
+    print "</pre>";
 }
