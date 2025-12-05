@@ -1016,7 +1016,8 @@ sub parse_postfix_log_line {
             'relay' => '',
             'delay' => '',
             'dsn' => '',
-            'reject_reason' => ''
+            'reject_reason' => '',
+            'client_ip' => ''
         };
 
         # Extract queue ID (if present)
@@ -1064,9 +1065,17 @@ sub parse_postfix_log_line {
             $entry->{'dsn'} = $1;
         }
 
-        # Extract rejection reason
-        if ($entry->{'status'} eq 'reject' && $message =~ /reject:\s+(.+?)(?:;|$)/i) {
-            $entry->{'reject_reason'} = $1;
+        # Extract rejection reason and client IP
+        if ($entry->{'status'} eq 'reject') {
+            if ($message =~ /reject:\s+(.+?)(?:;|$)/i) {
+                $entry->{'reject_reason'} = $1;
+            }
+
+            # Extract client IP from rejection message
+            # Format: "RCPT from unknown[10.152.7.111]:" or "RCPT from hostname[IP]:"
+            if ($message =~ /from\s+[^\[]*\[([0-9.]+)\]/i) {
+                $entry->{'client_ip'} = $1;
+            }
         }
 
         return $entry;
@@ -1262,7 +1271,7 @@ sub get_top_domains {
 
 =item get_rejection_reasons(\@log_entries)
 
-Get rejection reasons with counts. Returns array of hashrefs with keys: reason, count, percentage.
+Get rejection reasons with counts, IPs, and senders. Returns array of hashrefs with keys: reason, count, percentage, ips, senders.
 
 =cut
 
@@ -1270,6 +1279,8 @@ sub get_rejection_reasons {
     my ($entries) = @_;
 
     my %counts;
+    my %ips;      # Track unique IPs per reason
+    my %senders;  # Track unique senders per reason
     my $total_rejects = 0;
 
     foreach my $entry (@$entries) {
@@ -1282,6 +1293,16 @@ sub get_rejection_reasons {
         $reason =~ s/from=<[^>]*>\s+to=<[^>]*>//;
 
         $counts{$reason}++;
+
+        # Track client IP
+        if ($entry->{'client_ip'}) {
+            $ips{$reason}{$entry->{'client_ip'}}++;
+        }
+
+        # Track sender
+        if ($entry->{'from'}) {
+            $senders{$reason}{$entry->{'from'}}++;
+        }
     }
 
     my @sorted = sort { $counts{$b} <=> $counts{$a} } keys %counts;
@@ -1289,10 +1310,29 @@ sub get_rejection_reasons {
     my @results;
     foreach my $reason (@sorted) {
         my $pct = $total_rejects > 0 ? sprintf("%.1f", ($counts{$reason} / $total_rejects) * 100) : 0;
+
+        # Get top IPs for this reason (sorted by count, limit to top 5)
+        my @top_ips;
+        if ($ips{$reason}) {
+            my @sorted_ips = sort { $ips{$reason}{$b} <=> $ips{$reason}{$a} } keys %{$ips{$reason}};
+            @top_ips = splice(@sorted_ips, 0, 5);
+        }
+
+        # Get top senders for this reason (sorted by count, limit to top 5)
+        my @top_senders;
+        if ($senders{$reason}) {
+            my @sorted_senders = sort { $senders{$reason}{$b} <=> $senders{$reason}{$a} } keys %{$senders{$reason}};
+            @top_senders = splice(@sorted_senders, 0, 5);
+        }
+
         push(@results, {
             'reason' => $reason,
             'count' => $counts{$reason},
-            'percentage' => $pct
+            'percentage' => $pct,
+            'ips' => \@top_ips,
+            'senders' => \@top_senders,
+            'ip_counts' => $ips{$reason} || {},
+            'sender_counts' => $senders{$reason} || {}
         });
     }
 

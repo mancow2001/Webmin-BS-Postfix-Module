@@ -219,13 +219,40 @@ sub display_metrics {
         my @rejection_reasons = &get_rejection_reasons($entries);
 
         if (@rejection_reasons) {
-            print &ui_table_start("", "width=100%", 3);
-            print &ui_table_row(undef, "<b>Reason</b>", "<b>Count</b>", "<b>Percentage</b>");
+            print &ui_table_start("", "width=100%", 4);
+            print &ui_table_row(undef, "<b>Reason</b>", "<b>Count</b>", "<b>Percentage</b>", "<b>Top IPs / Senders</b>");
             foreach my $reason (@rejection_reasons) {
+                # Build IP/Sender list
+                my @details;
+
+                # Add top IPs with counts
+                if ($reason->{'ips'} && @{$reason->{'ips'}}) {
+                    my @ip_list;
+                    foreach my $ip (@{$reason->{'ips'}}) {
+                        my $count = $reason->{'ip_counts'}->{$ip} || 0;
+                        push(@ip_list, "<code>$ip</code> ($count)");
+                    }
+                    push(@details, "<b>IPs:</b> " . join(", ", @ip_list));
+                }
+
+                # Add top senders with counts
+                if ($reason->{'senders'} && @{$reason->{'senders'}}) {
+                    my @sender_list;
+                    foreach my $sender (@{$reason->{'senders'}}) {
+                        my $count = $reason->{'sender_counts'}->{$sender} || 0;
+                        my $display_sender = $sender || '(empty)';
+                        push(@sender_list, "<code>$display_sender</code> ($count)");
+                    }
+                    push(@details, "<b>Senders:</b> " . join(", ", @sender_list));
+                }
+
+                my $details_html = @details ? join("<br>", @details) : "<i>No details</i>";
+
                 print &ui_table_row(undef,
                     $reason->{'reason'},
                     $reason->{'count'},
-                    $reason->{'percentage'} . "%"
+                    $reason->{'percentage'} . "%",
+                    $details_html
                 );
             }
             print &ui_table_end();

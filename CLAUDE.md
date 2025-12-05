@@ -267,11 +267,11 @@ The dashboard supports aggregating logs from up to 6 servers:
 
 **Metrics Displayed**:
 1. **Summary Statistics**: Total, sent, rejected, deferred, bounced (with percentages)
-2. **Hourly Trend Chart**: ASCII bar chart showing message volume by hour
-3. **Top 10 Senders**: Most active sender email addresses
-4. **Top 10 Recipients**: Most active recipient email addresses
-5. **Top 10 Domains**: Most active sender domains
-6. **Rejection Analysis**: Breakdown of rejection reasons with counts and percentages
+2. **Hourly Trend Chart**: SVG line graph showing message volume by hour
+3. **Top 10 Senders**: Most active sender email addresses with message counts
+4. **Top 10 Recipients**: Most active recipient email addresses with message counts
+5. **Top 10 Domains**: Most active sender domains with message counts
+6. **Rejection Analysis**: Breakdown of rejection reasons with counts, percentages, top 5 client IPs, and top 5 senders per reason
 
 ### Log Parsing Architecture
 
@@ -283,8 +283,9 @@ The dashboard supports aggregating logs from up to 6 servers:
 
 #### Log Parsing
 - `parse_postfix_log_line($line)`: Extracts structured data from syslog format
-  - Returns hashref with: timestamp, hostname, process, pid, queue_id, status, from, to, relay, delay, dsn, reject_reason
+  - Returns hashref with: timestamp, hostname, process, pid, queue_id, status, from, to, relay, delay, dsn, reject_reason, client_ip
   - Handles: sent, deferred, bounced, reject, NOQUEUE entries
+  - Extracts client IP from rejection messages (format: `from unknown[10.152.7.111]:`)
 
 - `get_mail_logs($path, $start_time, $end_time, $max_lines)`: Read and parse single log file
   - Uses `tail -n` for efficiency (reads most recent entries)
@@ -297,10 +298,10 @@ The dashboard supports aggregating logs from up to 6 servers:
 
 #### Analytics
 - `aggregate_mail_stats(\@entries)`: Calculate sent/rejected/deferred/bounced counts and percentages
-- `get_top_senders(\@entries, $limit)`: Top N senders by volume
-- `get_top_recipients(\@entries, $limit)`: Top N recipients by volume
-- `get_top_domains(\@entries, $limit)`: Top N sender domains by volume
-- `get_rejection_reasons(\@entries)`: Group rejections by reason with counts
+- `get_top_senders(\@entries, $limit)`: Top N senders by volume with counts
+- `get_top_recipients(\@entries, $limit)`: Top N recipients by volume with counts
+- `get_top_domains(\@entries, $limit)`: Top N sender domains by volume with counts
+- `get_rejection_reasons(\@entries)`: Group rejections by reason with counts, percentages, top 5 IPs, and top 5 senders per reason
 - `group_by_hour(\@entries)`: Bucket entries by hour for trending
 
 ### Postfix Log Format
