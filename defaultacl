@@ -5,3 +5,5 @@ view_config=1
 control=1
 queue=1
 logs=1
+dashboard=1
+servers=1

@@ -88,12 +88,14 @@ print &ui_table_row($text{'control_title'}, join(" | ", @control_buttons));
 
 # Navigation links
 my @nav_links = (
+    &ui_link("dashboard.cgi", "<b>Mail Flow Dashboard</b>"),
     &ui_link("cidrs.cgi", "CIDR Whitelists"),
     &ui_link("onboard_domain.cgi", "Domain Onboarding"),
     &ui_link("offboard_domain.cgi", "Domain Offboarding"),
     &ui_link("view_config.cgi", "View Configuration"),
     &ui_link("queue.cgi", $text{'index_view_queue'}),
-    &ui_link("logs.cgi", $text{'index_view_logs'})
+    &ui_link("logs.cgi", $text{'index_view_logs'}),
+    &ui_link("servers.cgi", "Server Configuration")
 );
 
 print &ui_table_row("Management", join(" | ", @nav_links));

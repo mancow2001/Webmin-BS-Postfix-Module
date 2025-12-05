@@ -222,6 +222,8 @@ acl_view_config=Can view configuration files (read-only)
 acl_control=Can start/stop/reload Postfix
 acl_queue=Can view and manage mail queue
 acl_logs=Can view mail logs
+acl_dashboard=Can access mail flow dashboard
+acl_servers=Can view and test mail log server configuration
 
 # Common
 save=Save

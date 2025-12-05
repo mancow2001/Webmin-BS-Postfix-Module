@@ -929,6 +929,399 @@ sub delete_queue_message {
     return undef;
 }
 
+=head2 Server Management Functions
+
+=item get_configured_servers()
+
+Get list of configured remote servers. Returns array of hashrefs with keys: name, path, enabled, server_num.
+
+=cut
+
+sub get_configured_servers {
+    my @servers;
+
+    # Add local server first
+    push(@servers, {
+        'name' => 'Local Server',
+        'path' => $config{'mail_log_file'},
+        'enabled' => 1,
+        'server_num' => 0,
+        'is_local' => 1
+    });
+
+    # Add configured remote servers
+    for (my $i = 1; $i <= 5; $i++) {
+        my $name = $config{"server${i}_name"};
+        my $path = $config{"server${i}_path"};
+        my $enabled = $config{"server${i}_enabled"};
+
+        if ($name && $path && $enabled) {
+            push(@servers, {
+                'name' => $name,
+                'path' => $path,
+                'enabled' => 1,
+                'server_num' => $i,
+                'is_local' => 0
+            });
+        }
+    }
+
+    return @servers;
+}
+
+=item check_server_availability($log_path)
+
+Check if a log file is accessible. Returns 1 if accessible, 0 if not.
+
+=cut
+
+sub check_server_availability {
+    my ($log_path) = @_;
+
+    # Try alternate path if primary doesn't exist (for local server)
+    if (!-f $log_path && $log_path eq $config{'mail_log_file'} && $config{'alt_mail_log_file'}) {
+        $log_path = $config{'alt_mail_log_file'};
+    }
+
+    return (-f $log_path && -r $log_path) ? 1 : 0;
+}
+
+=head2 Log Parsing Functions
+
+=item parse_postfix_log_line($line)
+
+Parse a Postfix syslog line. Returns hashref with extracted fields or undef if not a valid Postfix log line.
+
+Fields returned: timestamp, hostname, process, pid, queue_id, status, from, to, relay, delay, dsn, reject_reason, message
+
+=cut
+
+sub parse_postfix_log_line {
+    my ($line) = @_;
+
+    # Parse syslog format: Month Day HH:MM:SS hostname process[pid]: message
+    if ($line =~ /^(\w+\s+\d+\s+\d+:\d+:\d+)\s+(\S+)\s+postfix\/(\w+)\[(\d+)\]:\s+(.+)$/) {
+        my ($timestamp, $hostname, $process, $pid, $message) = ($1, $2, $3, $4, $5);
+
+        my $entry = {
+            'timestamp' => $timestamp,
+            'hostname' => $hostname,
+            'process' => $process,
+            'pid' => $pid,
+            'message' => $message,
+            'queue_id' => '',
+            'status' => '',
+            'from' => '',
+            'to' => '',
+            'relay' => '',
+            'delay' => '',
+            'dsn' => '',
+            'reject_reason' => ''
+        };
+
+        # Extract queue ID (if present)
+        if ($message =~ /^([A-F0-9]+):\s+(.+)$/) {
+            $entry->{'queue_id'} = $1;
+            $message = $2;
+        } elsif ($message =~ /^NOQUEUE:\s+(.+)$/) {
+            $entry->{'queue_id'} = 'NOQUEUE';
+            $message = $1;
+        }
+
+        # Determine status
+        if ($message =~ /status=sent/i) {
+            $entry->{'status'} = 'sent';
+        } elsif ($message =~ /status=deferred/i) {
+            $entry->{'status'} = 'deferred';
+        } elsif ($message =~ /status=bounced/i) {
+            $entry->{'status'} = 'bounced';
+        } elsif ($message =~ /reject:/i) {
+            $entry->{'status'} = 'reject';
+        }
+
+        # Extract from address
+        if ($message =~ /from=<([^>]*)>/i) {
+            $entry->{'from'} = $1;
+        }
+
+        # Extract to address
+        if ($message =~ /to=<([^>]*)>/i) {
+            $entry->{'to'} = $1;
+        }
+
+        # Extract relay
+        if ($message =~ /relay=([^,\s]+)/i) {
+            $entry->{'relay'} = $1;
+        }
+
+        # Extract delay
+        if ($message =~ /delay=([\d.]+)/i) {
+            $entry->{'delay'} = $1;
+        }
+
+        # Extract DSN
+        if ($message =~ /dsn=([\d.]+)/i) {
+            $entry->{'dsn'} = $1;
+        }
+
+        # Extract rejection reason
+        if ($entry->{'status'} eq 'reject' && $message =~ /reject:\s+(.+?)(?:;|$)/i) {
+            $entry->{'reject_reason'} = $1;
+        }
+
+        return $entry;
+    }
+
+    return undef;
+}
+
+=item get_mail_logs($log_path, $start_time, $end_time, $max_lines)
+
+Read and parse mail logs from a single log file within time range.
+Returns array of parsed log entries.
+
+$start_time and $end_time are Unix timestamps (optional, undef for all)
+$max_lines limits number of lines read (default 10000)
+
+=cut
+
+sub get_mail_logs {
+    my ($log_path, $start_time, $end_time, $max_lines) = @_;
+    $max_lines ||= 10000;
+
+    my @entries;
+
+    # Check if file exists and is readable
+    if (!-f $log_path) {
+        # Try alternate path if this is the primary log
+        if ($log_path eq $config{'mail_log_file'} && $config{'alt_mail_log_file'}) {
+            $log_path = $config{'alt_mail_log_file'};
+        }
+        return @entries if (!-f $log_path);
+    }
+
+    return @entries if (!-r $log_path);
+
+    # Read log file (tail -n for efficiency)
+    my $cmd = "tail -n $max_lines " . quotemeta($log_path);
+    my @lines = split(/\n/, backquote_command($cmd));
+
+    foreach my $line (@lines) {
+        my $entry = parse_postfix_log_line($line);
+        next if (!$entry);
+
+        # Time filtering would require parsing timestamp to Unix time
+        # For now, we'll include all entries and filter by date string if needed
+        push(@entries, $entry);
+    }
+
+    return @entries;
+}
+
+=item get_mail_logs_multi(\@servers, $start_time, $end_time, $max_lines)
+
+Read and parse mail logs from multiple servers. Returns hashref with server names as keys,
+each containing array of log entries and availability status.
+
+=cut
+
+sub get_mail_logs_multi {
+    my ($servers, $start_time, $end_time, $max_lines) = @_;
+    my %results;
+
+    foreach my $server (@$servers) {
+        my $available = check_server_availability($server->{'path'});
+
+        if ($available) {
+            my @entries = get_mail_logs($server->{'path'}, $start_time, $end_time, $max_lines);
+
+            # Tag each entry with server name
+            foreach my $entry (@entries) {
+                $entry->{'server_name'} = $server->{'name'};
+            }
+
+            $results{$server->{'name'}} = {
+                'available' => 1,
+                'entries' => \@entries,
+                'count' => scalar(@entries)
+            };
+        } else {
+            $results{$server->{'name'}} = {
+                'available' => 0,
+                'entries' => [],
+                'count' => 0
+            };
+        }
+    }
+
+    return \%results;
+}
+
+=item aggregate_mail_stats(\@log_entries)
+
+Calculate aggregate statistics from log entries. Returns hashref with counts.
+
+=cut
+
+sub aggregate_mail_stats {
+    my ($entries) = @_;
+
+    my %stats = (
+        'total' => 0,
+        'sent' => 0,
+        'deferred' => 0,
+        'bounced' => 0,
+        'reject' => 0
+    );
+
+    foreach my $entry (@$entries) {
+        $stats{'total'}++;
+
+        if ($entry->{'status'}) {
+            $stats{$entry->{'status'}}++;
+        }
+    }
+
+    # Calculate percentages
+    if ($stats{'total'} > 0) {
+        foreach my $key (keys %stats) {
+            next if $key eq 'total';
+            $stats{$key . '_pct'} = sprintf("%.1f", ($stats{$key} / $stats{'total'}) * 100);
+        }
+    }
+
+    return \%stats;
+}
+
+=item get_top_senders(\@log_entries, $limit)
+
+Get top N senders by message count. Returns array of hashrefs with keys: email, count.
+
+=cut
+
+sub get_top_senders {
+    my ($entries, $limit) = @_;
+    $limit ||= 10;
+
+    my %counts;
+    foreach my $entry (@$entries) {
+        next if !$entry->{'from'};
+        $counts{$entry->{'from'}}++;
+    }
+
+    my @sorted = sort { $counts{$b} <=> $counts{$a} } keys %counts;
+    my @top = splice(@sorted, 0, $limit);
+
+    return map { { 'email' => $_, 'count' => $counts{$_} } } @top;
+}
+
+=item get_top_recipients(\@log_entries, $limit)
+
+Get top N recipients by message count. Returns array of hashrefs with keys: email, count.
+
+=cut
+
+sub get_top_recipients {
+    my ($entries, $limit) = @_;
+    $limit ||= 10;
+
+    my %counts;
+    foreach my $entry (@$entries) {
+        next if !$entry->{'to'};
+        $counts{$entry->{'to'}}++;
+    }
+
+    my @sorted = sort { $counts{$b} <=> $counts{$a} } keys %counts;
+    my @top = splice(@sorted, 0, $limit);
+
+    return map { { 'email' => $_, 'count' => $counts{$_} } } @top;
+}
+
+=item get_top_domains(\@log_entries, $limit)
+
+Get top N domains (from sender emails) by message count. Returns array of hashrefs with keys: domain, count.
+
+=cut
+
+sub get_top_domains {
+    my ($entries, $limit) = @_;
+    $limit ||= 10;
+
+    my %counts;
+    foreach my $entry (@$entries) {
+        if ($entry->{'from'} && $entry->{'from'} =~ /\@(.+)$/) {
+            $counts{$1}++;
+        }
+    }
+
+    my @sorted = sort { $counts{$b} <=> $counts{$a} } keys %counts;
+    my @top = splice(@sorted, 0, $limit);
+
+    return map { { 'domain' => $_, 'count' => $counts{$_} } } @top;
+}
+
+=item get_rejection_reasons(\@log_entries)
+
+Get rejection reasons with counts. Returns array of hashrefs with keys: reason, count, percentage.
+
+=cut
+
+sub get_rejection_reasons {
+    my ($entries) = @_;
+
+    my %counts;
+    my $total_rejects = 0;
+
+    foreach my $entry (@$entries) {
+        next if $entry->{'status'} ne 'reject';
+        $total_rejects++;
+
+        my $reason = $entry->{'reject_reason'} || 'Unknown reason';
+        # Normalize common rejection patterns
+        $reason =~ s/^RCPT from \S+:\s*//;
+        $reason =~ s/from=<[^>]*>\s+to=<[^>]*>//;
+
+        $counts{$reason}++;
+    }
+
+    my @sorted = sort { $counts{$b} <=> $counts{$a} } keys %counts;
+
+    my @results;
+    foreach my $reason (@sorted) {
+        my $pct = $total_rejects > 0 ? sprintf("%.1f", ($counts{$reason} / $total_rejects) * 100) : 0;
+        push(@results, {
+            'reason' => $reason,
+            'count' => $counts{$reason},
+            'percentage' => $pct
+        });
+    }
+
+    return @results;
+}
+
+=item group_by_hour(\@log_entries)
+
+Group log entries by hour for trending. Returns hashref with hour strings as keys and counts as values.
+
+=cut
+
+sub group_by_hour {
+    my ($entries) = @_;
+
+    my %hourly;
+
+    foreach my $entry (@$entries) {
+        # Extract hour from timestamp (e.g., "Dec  5 10:23:45" -> "10")
+        if ($entry->{'timestamp'} =~ /\d+:\d+:\d+/) {
+            my $hour = $entry->{'timestamp'};
+            $hour =~ s/^.*\s(\d+):\d+:\d+.*$/$1/;
+            $hourly{$hour}++;
+        }
+    }
+
+    return \%hourly;
+}
+
 =back
 
 =head1 AUTHOR
