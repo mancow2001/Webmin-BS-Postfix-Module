@@ -169,12 +169,14 @@ sub display_metrics {
     print "<h4>Top 10 Senders</h4>";
     my @top_senders = &get_top_senders($entries, 10);
     if (@top_senders) {
-        print &ui_table_start("", "width=100%", 2);
-        print &ui_table_row(undef, "<b>Sender</b>", "<b>Count</b>");
+        print &ui_columns_start(["Sender", "Count"], "width=100%");
         foreach my $sender (@top_senders) {
-            print &ui_table_row(undef, "<code>" . $sender->{'email'} . "</code>", $sender->{'count'});
+            print &ui_columns_row([
+                "<code>" . $sender->{'email'} . "</code>",
+                $sender->{'count'}
+            ]);
         }
-        print &ui_table_end();
+        print &ui_columns_end();
     } else {
         print "<p><i>No sender data available</i></p>";
     }
@@ -185,12 +187,14 @@ sub display_metrics {
     print "<h4>Top 10 Recipients</h4>";
     my @top_recipients = &get_top_recipients($entries, 10);
     if (@top_recipients) {
-        print &ui_table_start("", "width=100%", 2);
-        print &ui_table_row(undef, "<b>Recipient</b>", "<b>Count</b>");
+        print &ui_columns_start(["Recipient", "Count"], "width=100%");
         foreach my $recipient (@top_recipients) {
-            print &ui_table_row(undef, "<code>" . $recipient->{'email'} . "</code>", $recipient->{'count'});
+            print &ui_columns_row([
+                "<code>" . $recipient->{'email'} . "</code>",
+                $recipient->{'count'}
+            ]);
         }
-        print &ui_table_end();
+        print &ui_columns_end();
     } else {
         print "<p><i>No recipient data available</i></p>";
     }
@@ -202,12 +206,14 @@ sub display_metrics {
     print "<h4>Top 10 Sender Domains</h4>";
     my @top_domains = &get_top_domains($entries, 10);
     if (@top_domains) {
-        print &ui_table_start("", "width=100%", 2);
-        print &ui_table_row(undef, "<b>Domain</b>", "<b>Count</b>");
+        print &ui_columns_start(["Domain", "Count"], "width=100%");
         foreach my $domain (@top_domains) {
-            print &ui_table_row(undef, "<code>" . $domain->{'domain'} . "</code>", $domain->{'count'});
+            print &ui_columns_row([
+                "<code>" . $domain->{'domain'} . "</code>",
+                $domain->{'count'}
+            ]);
         }
-        print &ui_table_end();
+        print &ui_columns_end();
     } else {
         print "<p><i>No domain data available</i></p>";
     }
@@ -219,8 +225,7 @@ sub display_metrics {
         my @rejection_reasons = &get_rejection_reasons($entries);
 
         if (@rejection_reasons) {
-            print &ui_table_start("", "width=100%", 4);
-            print &ui_table_row(undef, "<b>Reason</b>", "<b>Count</b>", "<b>Percentage</b>", "<b>Top IPs / Senders</b>");
+            print &ui_columns_start(["Reason", "Count", "Percentage", "Top IPs / Senders"], "width=100%");
             foreach my $reason (@rejection_reasons) {
                 # Build IP/Sender list
                 my @details;
@@ -248,14 +253,14 @@ sub display_metrics {
 
                 my $details_html = @details ? join("<br>", @details) : "<i>No details</i>";
 
-                print &ui_table_row(undef,
+                print &ui_columns_row([
                     $reason->{'reason'},
                     $reason->{'count'},
                     $reason->{'percentage'} . "%",
                     $details_html
-                );
+                ]);
             }
-            print &ui_table_end();
+            print &ui_columns_end();
         }
     }
 
