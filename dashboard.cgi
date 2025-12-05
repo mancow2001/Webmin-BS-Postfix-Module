@@ -169,7 +169,7 @@ sub display_metrics {
     print "<h4>Top 10 Senders</h4>";
     my @top_senders = &get_top_senders($entries, 10);
     if (@top_senders) {
-        print &ui_columns_start(["Sender", "Count"], "width=100%");
+        print &ui_columns_start(["Sender", "Count"]);
         foreach my $sender (@top_senders) {
             print &ui_columns_row([
                 "<code>" . $sender->{'email'} . "</code>",
@@ -187,7 +187,7 @@ sub display_metrics {
     print "<h4>Top 10 Recipients</h4>";
     my @top_recipients = &get_top_recipients($entries, 10);
     if (@top_recipients) {
-        print &ui_columns_start(["Recipient", "Count"], "width=100%");
+        print &ui_columns_start(["Recipient", "Count"]);
         foreach my $recipient (@top_recipients) {
             print &ui_columns_row([
                 "<code>" . $recipient->{'email'} . "</code>",
@@ -206,7 +206,7 @@ sub display_metrics {
     print "<h4>Top 10 Sender Domains</h4>";
     my @top_domains = &get_top_domains($entries, 10);
     if (@top_domains) {
-        print &ui_columns_start(["Domain", "Count"], "width=100%");
+        print &ui_columns_start(["Domain", "Count"]);
         foreach my $domain (@top_domains) {
             print &ui_columns_row([
                 "<code>" . $domain->{'domain'} . "</code>",
@@ -225,7 +225,7 @@ sub display_metrics {
         my @rejection_reasons = &get_rejection_reasons($entries);
 
         if (@rejection_reasons) {
-            print &ui_columns_start(["Reason", "Count", "Percentage", "Top IPs / Senders"], "width=100%");
+            print &ui_columns_start(["Reason", "Count", "Percentage", "Top IPs / Senders"]);
             foreach my $reason (@rejection_reasons) {
                 # Build IP/Sender list
                 my @details;
