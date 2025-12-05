@@ -254,16 +254,70 @@ sub display_hourly_chart {
         $max_count = $hourly->{$hour} if $hourly->{$hour} > $max_count;
     }
 
-    # Display ASCII/HTML bar chart
-    print "<pre style='font-family:monospace; background:#f5f5f5; padding:10px; border:1px solid #ddd; overflow-x:auto;'>";
+    # Avoid division by zero
+    $max_count = 1 if $max_count == 0;
 
-    foreach my $hour (@hours) {
-        my $count = $hourly->{$hour};
-        my $bar_width = $max_count > 0 ? int(($count / $max_count) * 60) : 0;
-        my $bar = "█" x $bar_width;
+    # SVG dimensions
+    my $width = 800;
+    my $height = 300;
+    my $padding = 50;
+    my $graph_width = $width - (2 * $padding);
+    my $graph_height = $height - (2 * $padding);
 
-        printf "%02d:00 | %-60s %d\n", $hour, $bar, $count;
+    # Start SVG
+    print "<svg width='$width' height='$height' style='background:#fff; border:1px solid #ddd;'>\n";
+
+    # Draw axes
+    print "<line x1='$padding' y1='$padding' x2='$padding' y2='" . ($height - $padding) . "' stroke='#333' stroke-width='2'/>\n";
+    print "<line x1='$padding' y1='" . ($height - $padding) . "' x2='" . ($width - $padding) . "' y2='" . ($height - $padding) . "' stroke='#333' stroke-width='2'/>\n";
+
+    # Draw grid lines and y-axis labels
+    for (my $i = 0; $i <= 5; $i++) {
+        my $y = $padding + ($graph_height * $i / 5);
+        my $value = int($max_count * (5 - $i) / 5);
+
+        # Grid line
+        print "<line x1='$padding' y1='$y' x2='" . ($width - $padding) . "' y2='$y' stroke='#ddd' stroke-width='1'/>\n";
+
+        # Y-axis label
+        print "<text x='" . ($padding - 10) . "' y='" . ($y + 5) . "' text-anchor='end' font-size='12' fill='#666'>$value</text>\n";
     }
 
-    print "</pre>";
+    # Calculate points for line graph
+    my @points;
+    my $num_hours = scalar(@hours);
+
+    for (my $i = 0; $i < $num_hours; $i++) {
+        my $hour = $hours[$i];
+        my $count = $hourly->{$hour};
+
+        my $x = $padding + ($graph_width * $i / ($num_hours - 1 || 1));
+        my $y = ($height - $padding) - ($graph_height * $count / $max_count);
+
+        push(@points, "$x,$y");
+
+        # Draw point
+        print "<circle cx='$x' cy='$y' r='4' fill='#4CAF50'/>\n";
+
+        # X-axis label (every few hours to avoid crowding)
+        if ($num_hours <= 12 || $i % 2 == 0) {
+            my $label = sprintf("%02d:00", $hour);
+            print "<text x='$x' y='" . ($height - $padding + 20) . "' text-anchor='middle' font-size='11' fill='#666'>$label</text>\n";
+        }
+    }
+
+    # Draw line connecting points
+    if (@points > 1) {
+        my $polyline = join(" ", @points);
+        print "<polyline points='$polyline' fill='none' stroke='#2196F3' stroke-width='2'/>\n";
+    }
+
+    # Draw axis labels
+    print "<text x='" . ($width / 2) . "' y='" . ($height - 10) . "' text-anchor='middle' font-size='14' font-weight='bold' fill='#333'>Hour</text>\n";
+    print "<text x='15' y='" . ($height / 2) . "' text-anchor='middle' font-size='14' font-weight='bold' fill='#333' transform='rotate(-90 15 " . ($height / 2) . ")'>Message Count</text>\n";
+
+    # Draw title
+    print "<text x='" . ($width / 2) . "' y='25' text-anchor='middle' font-size='16' font-weight='bold' fill='#333'>Message Volume by Hour</text>\n";
+
+    print "</svg>\n";
 }
