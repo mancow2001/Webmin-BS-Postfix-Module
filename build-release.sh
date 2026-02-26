@@ -1,6 +1,6 @@
 #!/bin/bash
 # build-release.sh
-# Build a Webmin module tarball for release
+# Build a Webmin module package (.wbm.gz) for release
 
 set -e
 
@@ -14,7 +14,7 @@ if [ -z "$VERSION" ]; then
     exit 1
 fi
 
-TARBALL="${MODULE_NAME}-${VERSION}.tar.gz"
+PACKAGE="${MODULE_NAME}-${VERSION}.wbm.gz"
 BUILD_DIR="/tmp/${MODULE_NAME}-build-$$"
 MODULE_DIR="${BUILD_DIR}/${MODULE_NAME}"
 
@@ -24,15 +24,22 @@ echo "----------------------------------------"
 # Create build directory
 mkdir -p "${MODULE_DIR}"
 
-# Copy files to build directory
+# Copy files to build directory, excluding non-module files
 echo "Copying files..."
 rsync -av \
     --exclude='.git' \
     --exclude='.github' \
-    --exclude='*.tar.gz' \
+    --exclude='.claude' \
+    --exclude='.DS_Store' \
     --exclude='.gitignore' \
     --exclude='.gitattributes' \
+    --exclude='*.tar.gz' \
+    --exclude='*.wbm.gz' \
     --exclude='build-release.sh' \
+    --exclude='CLAUDE.md' \
+    --exclude='README.md' \
+    --exclude='postfix_config/' \
+    --exclude='log_sample/' \
     ./ "${MODULE_DIR}/"
 
 # Update version in module.info
@@ -40,24 +47,24 @@ echo "Updating version to ${VERSION}..."
 sed -i.bak "s/^version=.*/version=${VERSION}/" "${MODULE_DIR}/module.info"
 rm -f "${MODULE_DIR}/module.info.bak"
 
-# Create tarball
-echo "Creating tarball..."
+# Create .wbm.gz package
+echo "Creating package..."
 cd "${BUILD_DIR}"
-tar -czf "${TARBALL}" "${MODULE_NAME}"
+tar -czf "${PACKAGE}" "${MODULE_NAME}"
 
-# Move tarball to current directory
-mv "${TARBALL}" "${OLDPWD}/"
+# Move package to current directory
+mv "${PACKAGE}" "${OLDPWD}/"
 
 # Cleanup
 cd "${OLDPWD}"
 rm -rf "${BUILD_DIR}"
 
 echo "----------------------------------------"
-echo "Success! Created: ${TARBALL}"
+echo "Success! Created: ${PACKAGE}"
 echo ""
 echo "To install in Webmin:"
 echo "  1. Go to Webmin -> Webmin Configuration -> Webmin Modules"
 echo "  2. Click 'From uploaded file'"
-echo "  3. Upload ${TARBALL}"
+echo "  3. Upload ${PACKAGE}"
 echo ""
-echo "File size: $(du -h ${TARBALL} | cut -f1)"
+echo "File size: $(du -h ${PACKAGE} | cut -f1)"

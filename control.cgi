@@ -3,6 +3,7 @@
 # Control Postfix service (start, stop, reload, check)
 
 require './brightspeed-postfix-lib.pl';
+%access = &get_module_acl();
 
 &ReadParse();
 &ui_print_header(undef, $text{'control_title'}, "", undef, 1, 1);

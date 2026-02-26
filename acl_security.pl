@@ -61,6 +61,26 @@ sub acl_security_form {
     print &ui_table_row($text{'acl_logs'},
         &ui_radio("logs", int($acl->{'logs'}),
             [ [ 1, $text{'yes'} ], [ 0, $text{'no'} ] ]));
+
+    print &ui_table_row($text{'acl_dashboard'},
+        &ui_radio("dashboard", int($acl->{'dashboard'}),
+            [ [ 1, $text{'yes'} ], [ 0, $text{'no'} ] ]));
+
+    print &ui_table_row($text{'acl_servers'},
+        &ui_radio("servers", int($acl->{'servers'}),
+            [ [ 1, $text{'yes'} ], [ 0, $text{'no'} ] ]));
+
+    print &ui_table_row($text{'acl_onboard_domain'},
+        &ui_radio("onboard_domain", int($acl->{'onboard_domain'}),
+            [ [ 1, $text{'yes'} ], [ 0, $text{'no'} ] ]));
+
+    print &ui_table_row($text{'acl_offboard_domain'},
+        &ui_radio("offboard_domain", int($acl->{'offboard_domain'}),
+            [ [ 1, $text{'yes'} ], [ 0, $text{'no'} ] ]));
+
+    print &ui_table_row($text{'acl_backups'},
+        &ui_radio("backups", int($acl->{'backups'}),
+            [ [ 1, $text{'yes'} ], [ 0, $text{'no'} ] ]));
 }
 
 =item acl_security_save(\%acl, \%in)
@@ -82,6 +102,11 @@ sub acl_security_save {
     $acl->{'control'} = $in->{'control'};
     $acl->{'queue'} = $in->{'queue'};
     $acl->{'logs'} = $in->{'logs'};
+    $acl->{'dashboard'} = $in->{'dashboard'};
+    $acl->{'servers'} = $in->{'servers'};
+    $acl->{'onboard_domain'} = $in->{'onboard_domain'};
+    $acl->{'offboard_domain'} = $in->{'offboard_domain'};
+    $acl->{'backups'} = $in->{'backups'};
 }
 
 =back

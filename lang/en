@@ -33,6 +33,7 @@ cidrs_cidr=CIDR Range
 cidrs_comment=Comment
 cidrs_action=Action
 cidrs_delete=Delete
+cidrs_enabled=Enabled
 cidrs_save=Save Changes
 cidrs_err=Failed to save CIDR list
 cidrs_ecidr=Invalid CIDR format: $1
@@ -51,6 +52,9 @@ sender_relay_esender=Invalid sender format: $1
 sender_relay_enexthop=Invalid relay host format: $1
 sender_relay_updated=Sender relay map updated successfully
 sender_relay_default=Default relay: [smtp.mailgun.org]:587
+sender_relay_comment=Comment
+sender_relay_delete=Delete
+sender_relay_postmap_failed=Failed to run postmap: $1
 
 # Domain Transport
 domain_transport_title=Domain Transport Rules
@@ -68,6 +72,9 @@ domain_transport_updated=Transport map updated successfully
 domain_transport_discard=Discard/Blackhole
 domain_transport_smtp=SMTP Direct
 domain_transport_relay=Relay
+domain_transport_comment=Comment
+domain_transport_delete=Delete
+domain_transport_postmap_failed=Failed to run postmap: $1
 
 # Service Control
 control_title=Service Control
@@ -222,6 +229,8 @@ acl_view_config=Can view configuration files (read-only)
 acl_control=Can start/stop/reload Postfix
 acl_queue=Can view and manage mail queue
 acl_logs=Can view mail logs
+acl_dashboard=Can access mail flow dashboard
+acl_servers=Can view and test mail log server configuration
 
 # Common
 save=Save
@@ -236,6 +245,40 @@ none=None
 enabled=Enabled
 disabled=Disabled
 ok=OK
+
+# Configuration Backups
+backup_title=Configuration Backups
+backup_desc=View automatic configuration snapshots and restore previous states. Backups are created automatically before each configuration change and retained for 14 days.
+backup_list=Backup History
+backup_date=Date/Time
+backup_action=Action
+backup_description=Description
+backup_user=User
+backup_files=Files
+backup_actions=Actions
+backup_view=View Changes
+backup_restore=Restore
+backup_none=No backups found. Backups are created automatically when configuration changes are made.
+backup_confirm_title=Confirm Restore
+backup_confirm_desc=You are about to restore all configuration files to the state from $1. A backup of the current state will be created automatically before restoring.
+backup_confirm_button=Confirm Restore
+backup_restored=Configuration restored successfully from backup $1. Postfix has been reloaded.
+backup_error=Restore failed: $1
+backup_view_title=Changes Since Backup
+backup_view_desc=Comparing backup from $1 against current live configuration:
+backup_file_changed=Changed
+backup_file_unchanged=Unchanged
+backup_no_diff=No differences found — current configuration matches this backup.
+backup_action_onboard_domain=Domain Onboarding
+backup_action_offboard_domain=Domain Offboarding
+backup_action_modify_cidr=CIDR Whitelist Modification
+backup_action_pre_restore=Auto-backup Before Restore
+backup_action_modify_sender_relay=Sender Relay Modification
+backup_action_modify_transport=Transport Map Modification
+backup_back=Back to backup list
+acl_backups=Can view and restore configuration backups
+acl_sender_relay=Can manage sender relay routing
+acl_transport=Can manage domain transport rules
 
 # Errors
 error=Error

@@ -3,6 +3,7 @@
 # Domain offboarding interface
 
 require './brightspeed-postfix-lib.pl';
+%access = &get_module_acl();
 
 &ReadParse();
 &ui_print_header(undef, $text{'offboard_domain_title'}, "", undef, 1, 1);

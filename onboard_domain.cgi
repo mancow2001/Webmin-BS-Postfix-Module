@@ -3,6 +3,7 @@
 # Unified domain onboarding interface
 
 require './brightspeed-postfix-lib.pl';
+%access = &get_module_acl();
 
 &ReadParse();
 &ui_print_header(undef, $text{'onboard_domain_title'}, "", undef, 1, 1);
