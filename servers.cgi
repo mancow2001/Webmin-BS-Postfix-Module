@@ -3,6 +3,7 @@
 # View and test configured mail log servers
 
 require './brightspeed-postfix-lib.pl';
+%access = &get_module_acl();
 
 &ReadParse();
 &ui_print_header(undef, "Mail Log Servers", "", undef, 1, 1);

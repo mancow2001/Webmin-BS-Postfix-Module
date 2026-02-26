@@ -3,6 +3,7 @@
 # View and manage mail queue
 
 require './brightspeed-postfix-lib.pl';
+%access = &get_module_acl();
 
 &ReadParse();
 &ui_print_header(undef, $text{'queue_title'}, "", undef, 1, 1);

@@ -1,3 +1,5 @@
 /postfix_config
 .DS_Store
 /log_sample
+*.wbm.gz
+*.tar.gz

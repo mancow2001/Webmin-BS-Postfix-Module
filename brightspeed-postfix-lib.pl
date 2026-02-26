@@ -16,10 +16,13 @@ and transport rule configuration.
 
 BEGIN { push(@INC, ".."); }
 use WebminCore;
+use POSIX qw(strftime);
+use File::Path qw(make_path rmtree);
+use File::Basename;
 init_config();
 
+# Module variables - %access will be populated by each CGI script
 use vars qw(%access);
-%access = &get_module_acl();
 
 # Default configuration file paths
 $config{'postfix_config_dir'} ||= "/etc/postfix";
@@ -182,8 +185,11 @@ sub read_cidr_file {
     while (my $line = <$fh>) {
         chomp($line);
 
-        # Skip empty lines
-        next if $line =~ /^\s*$/;
+        # Preserve blank lines
+        if ($line =~ /^\s*$/) {
+            push(@entries, { 'type' => 'blank' });
+            next;
+        }
 
         # Extract comment if present
         my $comment = '';
@@ -192,13 +198,23 @@ sub read_cidr_file {
             $comment = $2;
             $comment =~ s/^\s+|\s+$//g;
         } elsif ($line =~ /^#(.+)$/) {
-            # Full-line comment
-            push(@entries, {
-                'type' => 'comment',
-                'comment' => $1,
-                'cidr' => '',
-                'action' => ''
-            });
+            my $comment_text = $1;
+            # Check if this is a disabled CIDR entry (e.g., #10.143.14.251/32	OK	#comment)
+            if ($comment_text =~ /^\s*(\S+)\s+(OK|reject)\s*(?:#\s*(.*))?$/i) {
+                push(@entries, {
+                    'type' => 'disabled',
+                    'cidr' => $1,
+                    'action' => $2,
+                    'comment' => defined($3) ? $3 : ''
+                });
+            } else {
+                push(@entries, {
+                    'type' => 'comment',
+                    'comment' => $comment_text,
+                    'cidr' => '',
+                    'action' => ''
+                });
+            }
             next;
         }
 
@@ -220,6 +236,7 @@ sub read_cidr_file {
 =item write_cidr_file($filename, \@entries)
 
 Write CIDR entries to file. Entries should be hashrefs with keys: type, cidr, action, comment.
+Also preserves blank lines (type=blank) and full-line comments (type=comment).
 
 =cut
 
@@ -229,8 +246,16 @@ sub write_cidr_file {
     open(my $fh, '>', $filename) or return "Failed to open $filename: $!";
 
     foreach my $entry (@$entries) {
-        if ($entry->{'type'} eq 'comment') {
+        if ($entry->{'type'} eq 'blank') {
+            print $fh "\n";
+        } elsif ($entry->{'type'} eq 'comment') {
             print $fh "#" . $entry->{'comment'} . "\n";
+        } elsif ($entry->{'type'} eq 'disabled') {
+            my $line = "#" . sprintf("%-20s\t%s", $entry->{'cidr'}, $entry->{'action'});
+            if ($entry->{'comment'}) {
+                $line .= "\t#" . $entry->{'comment'};
+            }
+            print $fh $line . "\n";
         } elsif ($entry->{'type'} eq 'cidr') {
             my $line = sprintf("%-20s\t%s", $entry->{'cidr'}, $entry->{'action'});
             if ($entry->{'comment'}) {
@@ -277,17 +302,13 @@ sub validate_cidr {
 
 =item update_cidr_hash($filename)
 
-Run postmap to update hash database for CIDR file. Returns undef on success, error message on failure.
+No-op for CIDR files. Postfix reads cidr: maps directly as text files on each
+lookup — they do not support postmap compilation. This function exists to
+maintain a consistent API alongside update_hash_map().
 
 =cut
 
 sub update_cidr_hash {
-    my ($filename) = @_;
-    my $out = backquote_command("$config{'postmap_command'} cidr:$filename 2>&1");
-    my $rv = $?;
-    if ($rv != 0) {
-        return $out || "postmap failed";
-    }
     return undef;
 }
 
@@ -311,8 +332,11 @@ sub read_pcre_file {
     while (my $line = <$fh>) {
         chomp($line);
 
-        # Skip empty lines
-        next if $line =~ /^\s*$/;
+        # Preserve blank lines
+        if ($line =~ /^\s*$/) {
+            push(@entries, { 'type' => 'blank' });
+            next;
+        }
 
         # Full-line comment
         if ($line =~ /^#(.+)$/) {
@@ -359,7 +383,7 @@ sub read_pcre_file {
 
 =item write_pcre_file($filename, \@entries)
 
-Write PCRE entries to file.
+Write PCRE entries to file. Also preserves blank lines (type=blank) and full-line comments (type=comment).
 
 =cut
 
@@ -369,7 +393,9 @@ sub write_pcre_file {
     open(my $fh, '>', $filename) or return "Failed to open $filename: $!";
 
     foreach my $entry (@$entries) {
-        if ($entry->{'type'} eq 'comment') {
+        if ($entry->{'type'} eq 'blank') {
+            print $fh "\n";
+        } elsif ($entry->{'type'} eq 'comment') {
             print $fh "#" . $entry->{'comment'} . "\n";
         } elsif ($entry->{'type'} eq 'pcre') {
             # Use tab for consistent formatting with Postfix files
@@ -401,8 +427,11 @@ sub read_hash_map {
     while (my $line = <$fh>) {
         chomp($line);
 
-        # Skip empty lines
-        next if $line =~ /^\s*$/;
+        # Preserve blank lines
+        if ($line =~ /^\s*$/) {
+            push(@entries, { 'type' => 'blank' });
+            next;
+        }
 
         # Extract comment
         my $comment = '';
@@ -438,7 +467,7 @@ sub read_hash_map {
 
 =item write_hash_map($filename, \@entries)
 
-Write hash map entries to file.
+Write hash map entries to file. Also preserves blank lines (type=blank) and full-line comments (type=comment).
 
 =cut
 
@@ -448,7 +477,9 @@ sub write_hash_map {
     open(my $fh, '>', $filename) or return "Failed to open $filename: $!";
 
     foreach my $entry (@$entries) {
-        if ($entry->{'type'} eq 'comment') {
+        if ($entry->{'type'} eq 'blank') {
+            print $fh "\n";
+        } elsif ($entry->{'type'} eq 'comment') {
             print $fh "#" . $entry->{'comment'} . "\n";
         } elsif ($entry->{'type'} eq 'mapping') {
             my $line = $entry->{'key'} . "\t" . $entry->{'value'};
@@ -528,7 +559,10 @@ sub onboard_domain_full {
         }
     }
 
-    # Create backups
+    # Create automatic backup before modifying config
+    create_backup('onboard_domain', "Onboarding domain $fqdn");
+
+    # Create transactional backups
     foreach my $file ($config{'header_checks_file'}, $config{'sasl_passwd_file'}, $config{'sender_relay_map'}) {
         my $backup = $file . '.backup.' . time();
         if (!copy_source_dest($file, $backup)) {
@@ -542,7 +576,14 @@ sub onboard_domain_full {
     }
 
     # Modify header_checks - insert before last entry
+    my $date_comment = "Onboarded " . strftime("%Y-%m-%d", localtime());
     my $header_pattern = '/^From: .*@' . quotemeta($fqdn) . '/';
+    my $comment_entry = {
+        'type' => 'comment',
+        'comment' => " $fqdn - $date_comment",
+        'pattern' => '',
+        'action' => ''
+    };
     my $new_entry = {
         'type' => 'pcre',
         'pattern' => $header_pattern,
@@ -550,9 +591,9 @@ sub onboard_domain_full {
         'comment' => ''
     };
 
-    # Insert before the last entry (which should be the REJECT rule)
+    # Insert comment and rule before the last entry (which should be the REJECT rule)
     if (@header_entries > 0) {
-        splice(@header_entries, -1, 0, $new_entry);
+        splice(@header_entries, -1, 0, $comment_entry, $new_entry);
     } else {
         push(@header_entries, $new_entry);
     }
@@ -573,7 +614,7 @@ sub onboard_domain_full {
         'type' => 'mapping',
         'key' => '@' . $fqdn,
         'value' => $relay_username . ':' . $relay_password,
-        'comment' => ''
+        'comment' => $date_comment
     });
 
     $err = write_hash_map($config{'sasl_passwd_file'}, \@sasl_entries);
@@ -609,7 +650,7 @@ sub onboard_domain_full {
         'type' => 'mapping',
         'key' => '@' . $fqdn,
         'value' => $relay_nexthop,
-        'comment' => ''
+        'comment' => $date_comment
     });
 
     $err = write_hash_map($config{'sender_relay_map'}, \@relay_entries);
@@ -677,7 +718,11 @@ sub offboard_domain_full {
 
     return "No domains specified for offboarding" if (!@fqdns);
 
-    # Create backups
+    # Create automatic backup before modifying config
+    my $domain_list = join(', ', @fqdns);
+    create_backup('offboard_domain', "Offboarding domain(s): $domain_list");
+
+    # Create transactional backups
     foreach my $file ($config{'header_checks_file'}, $config{'sasl_passwd_file'}, $config{'sender_relay_map'}) {
         my $backup = $file . '.backup.' . time();
         if (!copy_source_dest($file, $backup)) {
@@ -1361,6 +1406,275 @@ sub group_by_hour {
     }
 
     return \%hourly;
+}
+
+=head2 Backup and Restore Functions
+
+=item get_backup_dir()
+
+Returns the backup root directory path, creating it if it doesn't exist.
+
+=cut
+
+sub get_backup_dir {
+    my $dir = "$module_config_directory/backups";
+    if (!-d $dir) {
+        make_path($dir, { mode => 0700 });
+    }
+    return $dir;
+}
+
+=item get_managed_files()
+
+Returns an array of arrayrefs [config_key, basename] for all files to back up.
+
+=cut
+
+sub get_managed_files {
+    return (
+        ['cidr_root_file', 'allowed_brightspeed_root_cidrs'],
+        ['cidr_subdomain_file', 'allowed_brightspeed_subdomain_cidrs'],
+        ['allow_root_pcre', 'allow_brightspeed_root.pcre'],
+        ['block_root_pcre', 'block_brightspeed_root.pcre'],
+        ['allow_subdomain_pcre', 'allow_brightspeed_subdomains.pcre'],
+        ['sender_relay_map', 'sender_relay_map'],
+        ['transport_file', 'transport'],
+        ['domain_transport_file', 'domain-transport'],
+        ['header_checks_file', 'header_checks'],
+        ['sasl_passwd_file', 'sasl_passwd'],
+        ['v_domains_file', 'v-domains'],
+    );
+}
+
+=item create_backup($action, $description)
+
+Create a backup of all managed configuration files.
+Returns undef on success, error string on failure.
+
+=cut
+
+sub create_backup {
+    my ($action, $description) = @_;
+
+    my $backup_root = get_backup_dir();
+    my $timestamp = time();
+    my $dir_name = strftime("%Y%m%d-%H%M%S", localtime($timestamp));
+    my $backup_dir = "$backup_root/$dir_name";
+
+    if (!make_path($backup_dir, { mode => 0700 })) {
+        return "Failed to create backup directory: $backup_dir";
+    }
+
+    my @managed = get_managed_files();
+    my $file_count = 0;
+
+    foreach my $entry (@managed) {
+        my ($config_key, $basename) = @$entry;
+        my $src = $config{$config_key};
+        if ($src && -f $src) {
+            if (copy_source_dest($src, "$backup_dir/$basename")) {
+                $file_count++;
+            }
+        }
+    }
+
+    # Write backup.meta
+    my $date_str = strftime("%Y-%m-%d %H:%M:%S", localtime($timestamp));
+    my $user = $remote_user || 'unknown';
+    open(my $fh, '>', "$backup_dir/backup.meta") or return "Failed to write backup metadata: $!";
+    print $fh "timestamp=$timestamp\n";
+    print $fh "date=$date_str\n";
+    print $fh "user=$user\n";
+    print $fh "action=$action\n";
+    print $fh "description=$description\n";
+    print $fh "files_backed_up=$file_count\n";
+    close($fh);
+
+    purge_old_backups();
+
+    return undef;
+}
+
+=item purge_old_backups()
+
+Delete backup directories older than 14 days.
+
+=cut
+
+sub purge_old_backups {
+    my $backup_root = get_backup_dir();
+    my $cutoff = time() - (14 * 24 * 60 * 60);
+
+    opendir(my $dh, $backup_root) or return;
+    my @dirs = grep { /^\d{8}-\d{6}$/ && -d "$backup_root/$_" } readdir($dh);
+    closedir($dh);
+
+    foreach my $dir (@dirs) {
+        my $meta_file = "$backup_root/$dir/backup.meta";
+        next if (!-f $meta_file);
+
+        open(my $fh, '<', $meta_file) or next;
+        my %meta;
+        while (<$fh>) {
+            chomp;
+            if (/^(\w+)=(.*)$/) {
+                $meta{$1} = $2;
+            }
+        }
+        close($fh);
+
+        if ($meta{'timestamp'} && $meta{'timestamp'} < $cutoff) {
+            rmtree("$backup_root/$dir");
+        }
+    }
+}
+
+=item list_backups()
+
+Returns an array of hashrefs (sorted newest-first) with backup metadata.
+
+=cut
+
+sub list_backups {
+    my $backup_root = get_backup_dir();
+    my @backups;
+
+    opendir(my $dh, $backup_root) or return @backups;
+    my @dirs = grep { /^\d{8}-\d{6}$/ && -d "$backup_root/$_" } readdir($dh);
+    closedir($dh);
+
+    foreach my $dir (sort { $b cmp $a } @dirs) {
+        my $meta_file = "$backup_root/$dir/backup.meta";
+        next if (!-f $meta_file);
+
+        open(my $fh, '<', $meta_file) or next;
+        my %meta;
+        while (<$fh>) {
+            chomp;
+            if (/^(\w+)=(.*)$/) {
+                $meta{$1} = $2;
+            }
+        }
+        close($fh);
+
+        $meta{'dir_name'} = $dir;
+        push(@backups, \%meta);
+    }
+
+    return @backups;
+}
+
+=item restore_backup($backup_name)
+
+Restore all configuration files from a backup. Creates a pre-restore backup first.
+Returns undef on success, error string on failure.
+
+=cut
+
+sub restore_backup {
+    my ($backup_name) = @_;
+
+    my $backup_root = get_backup_dir();
+    my $backup_dir = "$backup_root/$backup_name";
+
+    if (!-d $backup_dir || !-f "$backup_dir/backup.meta") {
+        return "Backup not found: $backup_name";
+    }
+
+    # Create pre-restore backup
+    my $err = create_backup('pre_restore', "Auto-backup before restoring from $backup_name");
+    if ($err) {
+        return "Failed to create pre-restore backup: $err";
+    }
+
+    # Restore each file
+    my @managed = get_managed_files();
+    foreach my $entry (@managed) {
+        my ($config_key, $basename) = @$entry;
+        my $src = "$backup_dir/$basename";
+        my $dest = $config{$config_key};
+        if (-f $src && $dest) {
+            copy_source_dest($src, $dest);
+        }
+    }
+
+    # Set sasl_passwd permissions
+    chmod(0600, $config{'sasl_passwd_file'}) if -f $config{'sasl_passwd_file'};
+
+    # Run postmap on hash files (CIDR/PCRE files are read directly by Postfix)
+    foreach my $file_key ('sender_relay_map', 'transport_file', 'sasl_passwd_file') {
+        if (-f $config{$file_key}) {
+            update_hash_map($config{$file_key});
+        }
+    }
+
+    # Set sasl_passwd.db permissions
+    chmod(0600, $config{'sasl_passwd_file'} . '.db') if -f ($config{'sasl_passwd_file'} . '.db');
+
+    # Reload Postfix
+    $err = reload_postfix();
+    if ($err) {
+        return "Files restored but Postfix reload failed: $err";
+    }
+
+    webmin_log('restore', 'backup', $backup_name);
+    return undef;
+}
+
+=item get_backup_changes($backup_name)
+
+Compute differences between a backup and the current live files.
+Returns a hashref with per-file diff information.
+
+=cut
+
+sub get_backup_changes {
+    my ($backup_name) = @_;
+
+    my $backup_root = get_backup_dir();
+    my $backup_dir = "$backup_root/$backup_name";
+    my @managed = get_managed_files();
+    my @changes;
+    my $has_changes = 0;
+
+    foreach my $entry (@managed) {
+        my ($config_key, $basename) = @$entry;
+        my $backup_file = "$backup_dir/$basename";
+        my $live_file = $config{$config_key};
+
+        my %file_info = (
+            'basename' => $basename,
+            'config_key' => $config_key,
+            'changed' => 0,
+            'diff' => '',
+            'backup_exists' => (-f $backup_file ? 1 : 0),
+            'live_exists' => ($live_file && -f $live_file ? 1 : 0),
+        );
+
+        if (-f $backup_file && $live_file && -f $live_file) {
+            my $diff_out = backquote_command("diff -u " . quotemeta($backup_file) . " " . quotemeta($live_file) . " 2>&1");
+            if ($? != 0 && $diff_out) {
+                $file_info{'changed'} = 1;
+                $file_info{'diff'} = $diff_out;
+                $has_changes = 1;
+            }
+        } elsif (-f $backup_file && (!$live_file || !-f $live_file)) {
+            $file_info{'changed'} = 1;
+            $file_info{'diff'} = "File was removed since this backup.";
+            $has_changes = 1;
+        } elsif (!-f $backup_file && $live_file && -f $live_file) {
+            $file_info{'changed'} = 1;
+            $file_info{'diff'} = "File was added since this backup.";
+            $has_changes = 1;
+        }
+
+        push(@changes, \%file_info);
+    }
+
+    return {
+        'changes' => \@changes,
+        'has_changes' => $has_changes,
+    };
 }
 
 =back

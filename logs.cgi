@@ -3,6 +3,7 @@
 # View Postfix mail logs
 
 require './brightspeed-postfix-lib.pl';
+%access = &get_module_acl();
 
 &ReadParse();
 &ui_print_header(undef, $text{'logs_title'}, "", undef, 1, 1);
@@ -46,9 +47,11 @@ print "<br>";
 # Read last 100 lines
 my @lines;
 if ($filter) {
-    @lines = split(/\n/, `grep -i '$filter' '$log_file' | tail -100`);
+    # Sanitize filter to prevent command injection
+    my $safe_filter = quotemeta($filter);
+    @lines = split(/\n/, backquote_command("grep -i $safe_filter " . quotemeta($log_file) . " | tail -100"));
 } else {
-    @lines = split(/\n/, `tail -100 '$log_file'`);
+    @lines = split(/\n/, backquote_command("tail -100 " . quotemeta($log_file)));
 }
 
 # Display logs

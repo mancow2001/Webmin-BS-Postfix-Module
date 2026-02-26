@@ -35,11 +35,24 @@ sub parse_webmin_log {
     elsif ($action eq 'stop' && $type eq 'postfix') {
         return "Stopped Postfix service";
     }
-    elsif ($action eq 'onboard' && $type eq 'subdomain') {
-        return "Onboarded subdomain $object";
+    elsif ($action eq 'onboard' && $type eq 'domain') {
+        my $relay = $p->{'relay'} || '';
+        return "Onboarded domain $object" . ($relay ? " (relay: $relay)" : "");
     }
-    elsif ($action eq 'remove' && $type eq 'subdomain') {
-        return "Removed subdomain $object";
+    elsif ($action eq 'offboard' && $type eq 'domain') {
+        return "Offboarded domain(s): $object";
+    }
+    elsif ($action eq 'offboard' && $type eq 'header_checks_start') {
+        return "Started offboarding header checks cleanup: $object";
+    }
+    elsif ($action eq 'offboard' && $type eq 'header_checks_complete') {
+        return "Completed offboarding header checks cleanup: $object";
+    }
+    elsif ($action eq 'offboard' && $type eq 'header_checks_compare') {
+        return "Offboarding header check comparison: $object";
+    }
+    elsif ($action eq 'offboard' && $type eq 'header_checks_delete') {
+        return "Offboarding header check removal: $object";
     }
     elsif ($action eq 'modify' && $type eq 'cidr_root') {
         return "Modified root domain CIDR whitelist";

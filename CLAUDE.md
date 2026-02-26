@@ -33,9 +33,8 @@ perl test_regex.pl
 # Test standalone functions
 perl test_standalone.pl
 
-# Update hash databases after config changes
-postmap cidr:/etc/postfix/allowed_brightspeed_root_cidrs
-postmap cidr:/etc/postfix/allowed_brightspeed_subdomain_cidrs
+# Update hash databases after config changes (hash maps only)
+# Note: CIDR and PCRE files are read directly by Postfix — no postmap needed
 postmap hash:/etc/postfix/sender_relay_map
 postmap hash:/etc/postfix/transport
 postmap hash:/etc/postfix/sasl_passwd
@@ -70,12 +69,12 @@ The main library contains all shared functions organized into categories:
 - `read_cidr_file($filename)`: Returns array of hashrefs with keys: `type`, `cidr`, `action`, `comment`
 - `write_cidr_file($filename, \@entries)`: Writes CIDR entries
 - `validate_cidr($cidr)`: Validates CIDR format
-- `update_cidr_hash($filename)`: Runs `postmap cidr:filename`
+- `update_cidr_hash($filename)`: No-op (CIDR files are read directly by Postfix, like PCRE)
 
 #### PCRE Operations
 - `read_pcre_file($filename)`: Returns array of pattern entries
 - `write_pcre_file($filename, \@entries)`: Writes PCRE patterns
-- PCRE files are NOT compiled with postmap (Postfix reads them directly)
+- PCRE and CIDR files are NOT compiled with postmap (Postfix reads them directly)
 
 #### Hash Map Operations
 - `read_hash_map($filename)`: Returns array of key-value mappings
