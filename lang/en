@@ -39,6 +39,7 @@ cidrs_err=Failed to save CIDR list
 cidrs_ecidr=Invalid CIDR format: $1
 cidrs_updated=CIDR list updated successfully
 cidrs_postmap_failed=Failed to run postmap: $1
+cidrs_reload_failed=CIDR list saved but Postfix reload failed: $1
 
 # Sender Relay Maps
 sender_relay_title=Sender Relay Configuration
@@ -55,6 +56,7 @@ sender_relay_default=Default relay: [smtp.mailgun.org]:587
 sender_relay_comment=Comment
 sender_relay_delete=Delete
 sender_relay_postmap_failed=Failed to run postmap: $1
+sender_relay_reload_failed=Sender relay map saved but Postfix reload failed: $1
 
 # Domain Transport
 domain_transport_title=Domain Transport Rules
@@ -75,6 +77,7 @@ domain_transport_relay=Relay
 domain_transport_comment=Comment
 domain_transport_delete=Delete
 domain_transport_postmap_failed=Failed to run postmap: $1
+domain_transport_reload_failed=Transport map saved but Postfix reload failed: $1
 
 # Service Control
 control_title=Service Control

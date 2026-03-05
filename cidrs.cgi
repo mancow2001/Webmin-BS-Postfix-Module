@@ -85,10 +85,10 @@ if ($in{'save'}) {
     if ($err) {
         print &ui_alert_box(&text('error_file_write', $err), 'danger');
     } else {
-        # Run postmap
-        $err = &update_cidr_hash($file);
+        # Reload Postfix to apply CIDR changes (no postmap needed for CIDR files)
+        $err = &reload_postfix();
         if ($err) {
-            print &ui_alert_box(&text('cidrs_postmap_failed', $err), 'danger');
+            print &ui_alert_box(&text('cidrs_reload_failed', $err), 'danger');
         } else {
             print &ui_alert_box($text{'cidrs_updated'}, 'success');
             &webmin_log('modify', $list_type eq 'root' ? 'cidr_root' : 'cidr_subdomain', undef);

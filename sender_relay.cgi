@@ -79,8 +79,14 @@ if ($in{'save'}) {
         if ($err) {
             print &ui_alert_box(&text('sender_relay_postmap_failed', $err), 'danger');
         } else {
-            print &ui_alert_box($text{'sender_relay_updated'}, 'success');
-            &webmin_log('modify', 'sender_relay', undef);
+            # Reload Postfix to apply changes
+            $err = &reload_postfix();
+            if ($err) {
+                print &ui_alert_box(&text('sender_relay_reload_failed', $err), 'danger');
+            } else {
+                print &ui_alert_box($text{'sender_relay_updated'}, 'success');
+                &webmin_log('modify', 'sender_relay', undef);
+            }
         }
     }
 }

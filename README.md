@@ -112,13 +112,12 @@ After installation, configure the module for your environment:
 4. **Generate Hash Databases**
    ```bash
    cd /etc/postfix
-   postmap cidr:allowed_brightspeed_root_cidrs
-   postmap cidr:allowed_brightspeed_subdomain_cidrs
    postmap hash:sender_relay_map
    postmap hash:transport
    postmap hash:v-domains
    postmap hash:sasl_passwd
    ```
+   > **Note**: CIDR and PCRE files are read directly by Postfix as text — do NOT run `postmap` on them. Only `hash:` type maps require `postmap`.
 
 ## Usage
 
@@ -145,7 +144,7 @@ Manage IP address whitelists for controlling which hosts can send mail:
 3. Select action (OK or reject)
 4. Click Save
 
-The module automatically runs `postmap` to update the hash database.
+The module automatically reloads Postfix to apply changes. CIDR files are read directly by Postfix as text and do not require `postmap`.
 
 ### Subdomain Onboarding
 
@@ -445,6 +444,12 @@ For issues, questions, or contributions:
 This module is provided as-is for managing Brightspeed Postfix relay gateways.
 
 ## Changelog
+
+### Version 1.1
+- All configuration changes now automatically reload Postfix so changes take effect immediately
+- Removed incorrect `postmap` calls on CIDR files (CIDR/PCRE files are read directly by Postfix)
+- Removed inline comments from sasl_passwd entries to prevent parsing issues
+- Fixed cidrs.cgi, sender_relay.cgi, and domain_transport.cgi to call `postfix reload` after saving
 
 ### Version 1.0 (Initial Release)
 - CIDR whitelist management (root and subdomain)

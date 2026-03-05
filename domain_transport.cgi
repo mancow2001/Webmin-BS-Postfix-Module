@@ -59,8 +59,14 @@ if ($in{'save_hash'}) {
         if ($err) {
             print &ui_alert_box(&text('domain_transport_postmap_failed', $err), 'danger');
         } else {
-            print &ui_alert_box($text{'domain_transport_updated'}, 'success');
-            &webmin_log('modify', 'transport_hash', undef);
+            # Reload Postfix to apply changes
+            $err = &reload_postfix();
+            if ($err) {
+                print &ui_alert_box(&text('domain_transport_reload_failed', $err), 'danger');
+            } else {
+                print &ui_alert_box($text{'domain_transport_updated'}, 'success');
+                &webmin_log('modify', 'transport_hash', undef);
+            }
         }
     }
 }
@@ -105,9 +111,14 @@ if ($in{'save_regexp'}) {
     if ($err) {
         print &ui_alert_box(&text('error_file_write', $err), 'danger');
     } else {
-        # PCRE files are read directly by Postfix — no postmap needed
-        print &ui_alert_box($text{'domain_transport_updated'}, 'success');
-        &webmin_log('modify', 'transport_regexp', undef);
+        # PCRE files don't need postmap, but Postfix must be reloaded
+        $err = &reload_postfix();
+        if ($err) {
+            print &ui_alert_box(&text('domain_transport_reload_failed', $err), 'danger');
+        } else {
+            print &ui_alert_box($text{'domain_transport_updated'}, 'success');
+            &webmin_log('modify', 'transport_regexp', undef);
+        }
     }
 }
 

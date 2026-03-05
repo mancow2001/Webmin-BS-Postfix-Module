@@ -609,12 +609,12 @@ sub onboard_domain_full {
     }
     push(@modified_files, $config{'header_checks_file'});
 
-    # Modify sasl_passwd - append to end
+    # Modify sasl_passwd - append to end (no inline comments for sasl_passwd)
     push(@sasl_entries, {
         'type' => 'mapping',
         'key' => '@' . $fqdn,
         'value' => $relay_username . ':' . $relay_password,
-        'comment' => $date_comment
+        'comment' => ''
     });
 
     $err = write_hash_map($config{'sasl_passwd_file'}, \@sasl_entries);
