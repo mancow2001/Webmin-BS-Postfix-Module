@@ -85,12 +85,7 @@ if ($in{'save'}) {
     if ($err) {
         print &ui_alert_box(&text('error_file_write', $err), 'danger');
     } else {
-        # Run postmap on the CIDR file
-        $err = &update_cidr_hash($file);
-        if ($err) {
-            print &ui_alert_box(&text('cidrs_postmap_failed', $err), 'danger');
-        }
-        # Reload Postfix to apply CIDR changes
+        # Reload Postfix to apply CIDR changes (CIDR files are read directly, no postmap needed)
         $err = &reload_postfix();
         if ($err) {
             print &ui_alert_box(&text('cidrs_reload_failed', $err), 'danger');

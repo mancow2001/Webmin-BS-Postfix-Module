@@ -117,7 +117,7 @@ After installation, configure the module for your environment:
    postmap hash:v-domains
    postmap hash:sasl_passwd
    ```
-   > **Note**: PCRE files are read directly by Postfix as text — do NOT run `postmap` on them. CIDR and `hash:` type maps are updated via `postmap` automatically by the module.
+   > **Note**: CIDR and PCRE files are read directly by Postfix as text — do NOT run `postmap` on them. Only `hash:` type maps require `postmap`.
 
 ## Usage
 
@@ -144,7 +144,7 @@ Manage IP address whitelists for controlling which hosts can send mail:
 3. Select action (OK or reject)
 4. Click Save
 
-The module automatically runs `postmap` on the updated CIDR file and reloads Postfix to apply changes.
+The module automatically reloads Postfix to apply changes. CIDR files are read directly by Postfix and do not require `postmap`.
 
 ### Subdomain Onboarding
 
@@ -446,8 +446,8 @@ This module is provided as-is for managing Brightspeed Postfix relay gateways.
 ## Changelog
 
 ### Version 1.2
-- CIDR whitelist saves now run `postmap cidr:` on the updated file before reloading Postfix
-- `update_cidr_hash()` is no longer a no-op; it now runs `postmap cidr:$filename` to update the corresponding `.db` file
+- Confirmed CIDR files do not support `postmap` (Postfix reads them directly as text); `update_cidr_hash()` remains a no-op
+- CIDR whitelist saves continue to reload Postfix to apply changes immediately
 - Offboard domain process confirmed to run `postmap` on hash files and reload Postfix, matching the onboard workflow
 
 ### Version 1.1
