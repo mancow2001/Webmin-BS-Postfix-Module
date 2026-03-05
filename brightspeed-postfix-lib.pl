@@ -309,6 +309,12 @@ maintain a consistent API alongside update_hash_map().
 =cut
 
 sub update_cidr_hash {
+    my ($filename) = @_;
+    my $out = backquote_command("$config{'postmap_command'} cidr:$filename 2>&1");
+    my $rv = $?;
+    if ($rv != 0) {
+        return $out || "postmap failed";
+    }
     return undef;
 }
 

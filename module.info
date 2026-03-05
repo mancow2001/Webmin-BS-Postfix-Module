@@ -2,6 +2,6 @@ name=brightspeed-postfix
 desc=Brightspeed Postfix Relay
 os_support=*-linux
 category=servers
-version=1.1
+version=1.2
 depends=1.900
 longdesc=Manage Brightspeed Postfix mail relay gateway with CIDR whitelisting, subdomain onboarding, and sender-dependent routing
