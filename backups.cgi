@@ -109,8 +109,19 @@ if ($in{'view'}) {
             print "<h4><code>" . &html_escape($file->{'basename'}) . "</code> &mdash; $status_label</h4>";
 
             if ($file->{'changed'} && $file->{'diff'}) {
-                print "<pre style='background:#f5f5f5; padding:10px; border:1px solid #ddd; overflow-x:auto; font-size:12px'>";
-                print &html_escape($file->{'diff'});
+                print "<pre style='background:#fff; padding:10px; border:1px solid #ccc; overflow-x:auto; font-size:12px; color:#333'>";
+                foreach my $line (split(/\n/, $file->{'diff'})) {
+                    my $escaped = &html_escape($line);
+                    if ($line =~ /^\+/) {
+                        print "<span style='color:#006400; background:#e6ffe6; display:block'>$escaped</span>";
+                    } elsif ($line =~ /^-/) {
+                        print "<span style='color:#8b0000; background:#ffe6e6; display:block'>$escaped</span>";
+                    } elsif ($line =~ /^@@/) {
+                        print "<span style='color:#0000cc; display:block'>$escaped</span>";
+                    } else {
+                        print "$escaped\n";
+                    }
+                }
                 print "</pre>";
             }
         }
