@@ -40,6 +40,8 @@ rsync -av \
     --exclude='README.md' \
     --exclude='postfix_config/' \
     --exclude='log_sample/' \
+    --exclude='*.docx' \
+    --exclude='generate_admin_guide.py' \
     ./ "${MODULE_DIR}/"
 
 # Update version in module.info
